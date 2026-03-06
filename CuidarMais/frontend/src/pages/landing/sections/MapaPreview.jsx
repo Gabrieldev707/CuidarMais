@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import ModalAgendamento from '../../../components/ui/ModalAgendamento'
 
 const cores = {
   idosos: '#80a6c6',
@@ -72,6 +72,7 @@ export default function MapaPreview() {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const [casaSelecionada, setCasaSelecionada] = useState(null)
+  const [modalCasa, setModalCasa] = useState(null)
 
   useEffect(() => {
     if (mapInstanceRef.current) return
@@ -349,31 +350,41 @@ export default function MapaPreview() {
 
               {/* Botões */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto' }}>
-                <Link to="/cadastro" style={{
-                  backgroundColor: 'var(--primary)',
-                  color: 'white',
-                  padding: '0.85rem',
-                  borderRadius: '12px',
-                  textDecoration: 'none',
-                  textAlign: 'center',
-                  fontWeight: '600',
-                  fontSize: '0.95rem'
-                }}>
+                <button
+                  onClick={() => setModalCasa(casaSelecionada)}
+                  style={{
+                    backgroundColor: 'var(--primary)',
+                    color: 'white',
+                    padding: '0.85rem',
+                    borderRadius: '12px',
+                    border: 'none',
+                    width: '100%',
+                    fontWeight: '600',
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                >
                   Agendar Visita
-                </Link>
-                <Link to="/cadastro" style={{
-                  backgroundColor: 'transparent',
-                  color: 'var(--text)',
-                  padding: '0.85rem',
-                  borderRadius: '12px',
-                  textDecoration: 'none',
-                  textAlign: 'center',
-                  fontWeight: '600',
-                  fontSize: '0.95rem',
-                  border: '2px solid var(--secondary)'
-                }}>
-                  Ver mais detalhes
-                </Link>
+                </button>
+                <button
+                  onClick={() => setCasaSelecionada(null)}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: 'var(--text)',
+                    padding: '0.85rem',
+                    borderRadius: '12px',
+                    width: '100%',
+                    fontWeight: '600',
+                    fontSize: '0.95rem',
+                    border: '2px solid var(--secondary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Fechar
+                </button>
               </div>
             </div>
           )}
@@ -408,6 +419,14 @@ export default function MapaPreview() {
           ))}
         </div>
       </div>
+
+      {/* Modal de agendamento */}
+      {modalCasa && (
+        <ModalAgendamento
+          casa={modalCasa}
+          onFechar={() => setModalCasa(null)}
+        />
+      )}
     </section>
   )
 }
