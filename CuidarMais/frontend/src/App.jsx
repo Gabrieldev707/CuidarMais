@@ -6,6 +6,7 @@ import LandingPage from './pages/landing/LandingPage'
 import Login from './pages/auth/Login'
 import Cadastro from './pages/auth/Cadastro'
 import Dashboard from './pages/dashboard/Dashboard'
+import DashboardAdmin from './pages/dashboard/DashboardAdmin'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<DashboardAdmin />} />
             </Routes>
           </div>
         </BrowserRouter>

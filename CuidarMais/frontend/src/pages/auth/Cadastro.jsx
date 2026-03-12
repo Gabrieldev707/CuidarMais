@@ -11,7 +11,8 @@ export default function Cadastro() {
     email: '',
     senha: '',
     telefone: '',
-    role: 'familia'
+    role: 'familia',
+    codigoConvite: ''
   })
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,7 +45,8 @@ export default function Cadastro() {
     fontSize: '0.95rem',
     outline: 'none',
     transition: 'border 0.2s',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    fontFamily: 'inherit'
   }
 
   const labelStyle = {
@@ -137,7 +139,7 @@ export default function Cadastro() {
               ].map(tipo => (
                 <div
                   key={tipo.value}
-                  onClick={() => setForm(prev => ({ ...prev, role: tipo.value }))}
+                  onClick={() => setForm(prev => ({ ...prev, role: tipo.value, codigoConvite: '' }))}
                   style={{
                     backgroundColor: form.role === tipo.value ? 'var(--primary)' : 'var(--background)',
                     color: form.role === tipo.value ? 'white' : 'var(--text)',
@@ -210,7 +212,7 @@ export default function Cadastro() {
           </div>
 
           {/* Senha */}
-          <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ marginBottom: form.role === 'gestor' ? '1.25rem' : '1.75rem' }}>
             <label style={labelStyle}>Senha</label>
             <input
               type="password"
@@ -223,6 +225,57 @@ export default function Cadastro() {
               onBlur={e => e.target.style.border = '2px solid transparent'}
             />
           </div>
+
+          {/* Código de convite — só aparece para gestor */}
+          {form.role === 'gestor' && (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <label style={labelStyle}>
+                Código de convite
+                <span style={{
+                  marginLeft: '0.4rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '400',
+                  opacity: 0.6
+                }}>
+                  (enviado por email pelo administrador)
+                </span>
+              </label>
+              <input
+                type="text"
+                name="codigoConvite"
+                value={form.codigoConvite}
+                onChange={handleChange}
+                placeholder="Ex: A1B2C3D4"
+                maxLength={8}
+                style={{
+                  ...inputStyle,
+                  letterSpacing: '4px',
+                  fontWeight: '700',
+                  fontSize: '1.1rem',
+                  textTransform: 'uppercase',
+                  textAlign: 'center'
+                }}
+                onFocus={e => e.target.style.border = '2px solid var(--primary)'}
+                onBlur={e => e.target.style.border = '2px solid transparent'}
+              />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                marginTop: '0.5rem',
+                fontSize: '0.8rem',
+                color: 'var(--text)',
+                opacity: 0.55
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Solicite o código ao administrador da plataforma
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleSubmit}
@@ -237,7 +290,8 @@ export default function Cadastro() {
               fontSize: '1rem',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1
+              opacity: loading ? 0.7 : 1,
+              transition: 'opacity 0.2s'
             }}
           >
             {loading ? 'Criando conta...' : 'Criar conta'}

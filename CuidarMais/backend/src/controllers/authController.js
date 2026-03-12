@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ConviteGestor = require('../models/ConviteGestor');
 
 const gerarToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
@@ -9,14 +10,36 @@ const gerarToken = (id, role) => {
 
 exports.register = async(req, res) => {
     try {
-        const { nome, email, senha, telefone, role } = req.body;
+        const { nome, email, senha, telefone, role, codigoConvite } = req.body;
 
         const usuarioExiste = await User.findOne({ email });
         if (usuarioExiste) {
             return res.status(400).json({ message: 'Email já cadastrado' });
         }
 
-        const usuario = await User.create({ nome, email, senha, telefone, role });
+        if (role === 'gestor') {
+            if (!codigoConvite) {
+                return res.status(400).json({ message: 'Código de convite obrigatório para gestores' });
+            }
+
+            const convite = await ConviteGestor.findOne({
+                email: email.toLowerCase(),
+                codigo: codigoConvite.toUpperCase(),
+                usado: false,
+                expiresAt: { $gt: new Date() }
+            });
+
+            if (!convite) {
+                return res.status(400).json({ message: 'Código de convite inválido ou expirado' });
+            }
+
+            convite.usado = true;
+            await convite.save();
+        }
+
+        const roleSeguro = role === 'admin' ? 'familia' : (role || 'familia');
+
+        const usuario = await User.create({ nome, email, senha, telefone, role: roleSeguro });
         const token = gerarToken(usuario._id, usuario.role);
 
         res.status(201).json({
@@ -69,6 +92,34 @@ exports.perfil = async(req, res) => {
     try {
         const usuario = await User.findById(req.usuario.id);
         res.json({ usuario });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor', error: error.message });
+    }
+};
+
+// TEMPORÁRIO - só para desenvolvimento, remover antes de produção
+exports.registerDev = async(req, res) => {
+    try {
+        const { nome, email, senha, telefone, role } = req.body;
+
+        const usuarioExiste = await User.findOne({ email });
+        if (usuarioExiste) {
+            return res.status(400).json({ message: 'Email já cadastrado' });
+        }
+
+        const usuario = await User.create({ nome, email, senha, telefone, role: role || 'familia' });
+        const token = gerarToken(usuario._id, usuario.role);
+
+        res.status(201).json({
+            message: 'Usuário criado com sucesso',
+            token,
+            usuario: {
+                id: usuario._id,
+                nome: usuario.nome,
+                email: usuario.email,
+                role: usuario.role
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: 'Erro no servidor', error: error.message });
     }

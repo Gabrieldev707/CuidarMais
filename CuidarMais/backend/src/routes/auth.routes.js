@@ -7,4 +7,7 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/perfil', authMiddleware, authController.perfil);
 
+// TEMPORÁRIO - remover antes de produção
+router.post('/register-dev', authController.registerDev);
+
 module.exports = router;

@@ -49,7 +49,7 @@ export default function ModalAgendamento({ casa, onFechar }) {
     setErro('')
     try {
       await api.post('/visitas', {
-        casaId: casa.id,
+        casaId: casa._id || casa.id,
         data: form.dataVisita,
         horario: form.horario,
         observacoes: `Idoso: ${form.nomeIdoso} | Nascimento: ${form.dataNascimento} | Dependência: ${form.dependencia} | Condições: ${form.condicoes.join(', ')} | Obs: ${form.observacoes}`
