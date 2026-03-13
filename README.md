@@ -78,6 +78,14 @@
 | Helmet | latest | Segurança HTTP |
 | dotenv | latest | Variáveis de ambiente |
 | Nodemon | latest | Hot reload em desenvolvimento |
+| Zod | v4.x | Validação de dados nas rotas |
+| Apollo Server | v5.x | Servidor GraphQL |
+| graphql-tag | latest | Parser de queries GraphQL |
+
+### Frontend
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Apollo Client | v4.x | Queries e mutations GraphQL |
 
 ### Serviços Externos
 | Serviço | Uso |
@@ -121,6 +129,16 @@ CuidarMais/
 │   │   │   ├── assistido.routes.js
 │   │   │   ├── candidatura.routes.js
 │   │   │   └── admin.routes.js
+│   │   ├── graphql/
+│   │   │   ├── typeDefs.js
+│   │   │   └── resolvers.js
+│   │   ├── validators/
+│   │   │   ├── auth.validators.js
+│   │   │   ├── casa.validators.js
+│   │   │   ├── visita.validators.js
+│   │   │   ├── candidatura.validators.js
+│   │   │   ├── assistido.validators.js
+│   │   │   └── admin.validators.js
 │   │   └── app.js
 │   ├── .env
 │   ├── server.js
@@ -147,6 +165,10 @@ CuidarMais/
 │   │   │       ├── DashboardFamilia.jsx
 │   │   │       ├── DashboardGestor.jsx
 │   │   │       └── DashboardAdmin.jsx
+│   │   ├── graphql/
+│   │   │   └── queries.js
+│   │   ├── lib/
+│   │   │   └── apolloClient.js
 │   │   ├── services/
 │   │   │   └── api.js
 │   │   ├── App.jsx
@@ -207,6 +229,83 @@ CuidarMais/
 | DELETE | `/convite/:id` | Admin | Remover convite |
 | POST | `/validar-codigo` | Público | Validar código de convite |
 | GET | `/stats` | Admin | Estatísticas gerais do sistema |
+
+---
+
+## 🔍 Validação de Dados (Zod)
+
+Todas as rotas que recebem body são validadas com **Zod v4** antes de chegar ao controller. Se os dados forem inválidos, a resposta é sempre:
+
+```json
+{
+  "erro": "Dados inválidos",
+  "detalhes": [
+    { "campo": "horario", "mensagem": "Horário deve estar no formato HH:MM" }
+  ]
+}
+```
+
+Os schemas ficam em `backend/src/validators/` — um arquivo por domínio.
+
+> ⚠️ Ao testar pelo Thunder Client / Postman, sempre envie o header `Content-Type: application/json`, caso contrário o body chega vazio e o login retorna "Email ou senha incorretos".
+
+---
+
+## 🔷 API GraphQL
+
+Além da REST, o projeto expõe uma API GraphQL em paralelo.
+
+**URL:** `http://localhost:5000/graphql`
+
+Acesse essa URL no browser com o backend rodando para abrir o **Apollo Sandbox** — interface interativa com o schema completo.
+
+Para rotas autenticadas, envie o header `Authorization: Bearer <token>`.
+
+### Queries disponíveis
+
+| Query | Auth | Descrição |
+|---|---|---|
+| `casas(cidade, tipo, servico, apenasComVagas)` | Não | Listar casas com filtros |
+| `casa(id)` | Não | Detalhes de uma casa |
+| `minhasVisitas` | Sim | Visitas do usuário logado |
+| `minhasCandidaturas` | Sim | Candidaturas do usuário logado |
+
+### Mutations disponíveis
+
+| Mutation | Auth | Descrição |
+|---|---|---|
+| `agendarVisita(casaId, data, horario, observacoes)` | Sim | Agendar visita |
+| `cancelarVisita(id)` | Sim | Cancelar uma visita |
+
+### Exemplo de query
+
+```graphql
+query {
+  casas(apenasComVagas: true) {
+    id
+    nome
+    vagasDisponiveis
+    endereco { cidade bairro }
+    gestor { nome email }
+  }
+}
+```
+
+### Usando nos componentes React
+
+```jsx
+import { useQuery, useMutation } from '@apollo/client/react'
+import { GET_CASAS, AGENDAR_VISITA } from '../graphql/queries'
+
+const { data, loading } = useQuery(GET_CASAS, {
+  variables: { apenasComVagas: true }
+})
+
+const [agendarVisita] = useMutation(AGENDAR_VISITA)
+await agendarVisita({ variables: { casaId, data, horario } })
+```
+
+Todas as queries e mutations já estão definidas em `frontend/src/graphql/queries.js`.
 
 ---
 
