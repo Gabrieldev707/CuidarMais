@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const AuthContext = createContext()
 
@@ -8,9 +9,7 @@ export function AuthProvider({ children }) {
     return salvo ? JSON.parse(salvo) : null
   })
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem('token') || null
-  })
+  const [token, setToken] = useState(() => localStorage.getItem('token') || null)
 
   const login = (dadosUsuario, tokenJWT) => {
     setUsuario(dadosUsuario)
@@ -24,6 +23,7 @@ export function AuthProvider({ children }) {
     setToken(null)
     localStorage.removeItem('usuario')
     localStorage.removeItem('token')
+    window.location.href = '/login'
   }
 
   return (

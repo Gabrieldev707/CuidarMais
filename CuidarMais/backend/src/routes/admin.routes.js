@@ -6,6 +6,7 @@ const adminController = require('../controllers/adminController')
 
 router.post('/convite', auth, checkRole('admin'), adminController.gerarConvite)
 router.get('/convites', auth, checkRole('admin'), adminController.listarConvites)
+router.delete('/convite/:id', auth, checkRole('admin'), adminController.deletarConvite)
 router.post('/validar-codigo', adminController.validarCodigo)
 router.get('/stats', auth, checkRole('admin'), adminController.getStats)
 

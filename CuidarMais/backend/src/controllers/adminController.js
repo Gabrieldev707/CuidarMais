@@ -3,14 +3,6 @@ const nodemailer = require('nodemailer')
 const ConviteGestor = require('../models/ConviteGestor')
 const User = require('../models/User')
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-})
-
 exports.gerarConvite = async(req, res) => {
     try {
         const { email } = req.body
@@ -32,6 +24,17 @@ exports.gerarConvite = async(req, res) => {
             email,
             codigo,
             criadoPor: req.usuario.id
+        })
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
         })
 
         await transporter.sendMail({
@@ -84,6 +87,15 @@ exports.listarConvites = async(req, res) => {
             .populate('criadoPor', 'nome')
             .sort({ createdAt: -1 })
         res.json({ convites })
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor', error: error.message })
+    }
+}
+
+exports.deletarConvite = async(req, res) => {
+    try {
+        await ConviteGestor.findByIdAndDelete(req.params.id)
+        res.json({ message: 'Convite removido' })
     } catch (error) {
         res.status(500).json({ message: 'Erro no servidor', error: error.message })
     }

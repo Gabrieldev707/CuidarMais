@@ -6,7 +6,7 @@ export default function DashboardAdmin() {
   const { usuario } = useAuth()
   const [aba, setAba] = useState('visao')
   const [convites, setConvites] = useState([])
-  const [stats, setStats] = useState({ usuarios: 0, casas: 0, visitas: 0, gestores: 0 })
+  const [stats, setStats] = useState({ usuarios: 0, gestores: 0, casas: 0, visitas: 0 })
   const [loading, setLoading] = useState(true)
   const [emailConvite, setEmailConvite] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -19,9 +19,7 @@ export default function DashboardAdmin() {
     setTimeout(() => setToastMsg(''), 4000)
   }
 
-  useEffect(() => {
-    carregarDados()
-  }, [])
+  useEffect(() => { carregarDados() }, [])
 
   const carregarDados = async () => {
     setLoading(true)
@@ -57,6 +55,17 @@ export default function DashboardAdmin() {
     }
   }
 
+  const deletarConvite = async (id) => {
+    if (!confirm('Tem certeza que quer remover este convite?')) return
+    try {
+      await api.delete(`/admin/convite/${id}`)
+      toast('Convite removido!')
+      carregarDados()
+    } catch {
+      toast('Erro ao remover convite', 'erro')
+    }
+  }
+
   const statusConvite = (convite) => {
     if (convite.usado) return { label: 'Usado', cor: '#7ab894' }
     if (new Date(convite.expiresAt) < new Date()) return { label: 'Expirado', cor: '#e87c7c' }
@@ -75,13 +84,107 @@ export default function DashboardAdmin() {
       color: 'var(--text)', fontSize: '0.9rem', outline: 'none',
       boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border 0.2s'
     },
-    label: {
-      display: 'block', fontSize: '0.82rem', fontWeight: '600',
-      color: 'var(--text)', opacity: 0.7, marginBottom: '0.35rem'
-    },
-    card: {
-      backgroundColor: 'var(--secondary)', borderRadius: '20px', padding: '1.75rem'
-    }
+    card: { backgroundColor: 'var(--secondary)', borderRadius: '20px', padding: '1.75rem' }
+  }
+
+  const BotaoEnviar = () => (
+    <button onClick={gerarConvite} disabled={enviando} style={{
+      backgroundColor: 'var(--primary)', color: 'white', border: 'none',
+      padding: '0.75rem 1.5rem', borderRadius: '10px', fontSize: '0.9rem',
+      fontWeight: '700', cursor: enviando ? 'not-allowed' : 'pointer',
+      opacity: enviando ? 0.7 : 1, whiteSpace: 'nowrap',
+      display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'opacity 0.2s'
+    }}>
+      {enviando ? (
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ animation: 'spin 1s linear infinite' }}>
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          Enviando...
+        </>
+      ) : (
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Enviar convite
+        </>
+      )}
+    </button>
+  )
+
+  const CardConvite = ({ c }) => {
+    const st = statusConvite(c)
+    return (
+      <div style={{
+        backgroundColor: 'var(--background)', borderRadius: '14px',
+        padding: '1rem 1.25rem', display: 'flex',
+        alignItems: 'center', justifyContent: 'space-between',
+        gap: '1rem', flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px',
+            backgroundColor: st.cor + '20', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            color: st.cor, flexShrink: 0
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontWeight: '700', color: 'var(--text)', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
+              {c.email}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.5, display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span>Criado em {new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
+              <span>·</span>
+              <span>Expira {new Date(c.expiresAt).toLocaleDateString('pt-BR')}</span>
+              {c.criadoPor && <><span>·</span><span>por {c.criadoPor.nome}</span></>}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{
+            fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700',
+            letterSpacing: '3px', color: 'var(--text)', opacity: 0.5
+          }}>
+            {c.codigo}
+          </span>
+          <div style={{
+            backgroundColor: st.cor + '20', color: st.cor,
+            padding: '0.3rem 0.85rem', borderRadius: '100px',
+            fontSize: '0.78rem', fontWeight: '700'
+          }}>
+            {st.label}
+          </div>
+          <button
+            onClick={() => deletarConvite(c._id)}
+            title="Remover convite"
+            style={{
+              backgroundColor: '#e87c7c20', color: '#e87c7c',
+              border: 'none', width: '34px', height: '34px',
+              borderRadius: '8px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.2s', flexShrink: 0
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e87c7c40'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e87c7c20'}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -155,8 +258,6 @@ export default function DashboardAdmin() {
         {/* ABA VISÃO GERAL */}
         {aba === 'visao' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-            {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
               {[
                 { label: 'Usuários', valor: stats.usuarios || '—', cor: '#80a6c6', icon: <IconUsers /> },
@@ -187,7 +288,6 @@ export default function DashboardAdmin() {
               ))}
             </div>
 
-            {/* Gerar convite rápido */}
             <div style={s.card}>
               <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)', marginBottom: '0.3rem' }}>
                 Convidar novo gestor
@@ -197,99 +297,27 @@ export default function DashboardAdmin() {
               </p>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <div style={{ flex: 1 }}>
-                  <input
-                    type="email"
-                    value={emailConvite}
-                    onChange={e => setEmailConvite(e.target.value)}
+                  <input type="email" value={emailConvite} onChange={e => setEmailConvite(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && gerarConvite()}
-                    placeholder="email@gestor.com"
-                    style={s.input}
+                    placeholder="email@gestor.com" style={s.input}
                     onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                    onBlur={e => e.target.style.border = '2px solid transparent'}
-                  />
+                    onBlur={e => e.target.style.border = '2px solid transparent'} />
                 </div>
-                <button onClick={gerarConvite} disabled={enviando} style={{
-                  backgroundColor: 'var(--primary)', color: 'white',
-                  border: 'none', padding: '0.75rem 1.5rem', borderRadius: '10px',
-                  fontSize: '0.9rem', fontWeight: '700', cursor: enviando ? 'not-allowed' : 'pointer',
-                  opacity: enviando ? 0.7 : 1, whiteSpace: 'nowrap',
-                  display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'opacity 0.2s'
-                }}>
-                  {enviando ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        style={{ animation: 'spin 1s linear infinite' }}>
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                      </svg>
-                      Enviando...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                      </svg>
-                      Enviar convite
-                    </>
-                  )}
-                </button>
+                <BotaoEnviar />
               </div>
             </div>
 
-            {/* Últimos convites */}
             <div style={s.card}>
               <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)', marginBottom: '1.25rem' }}>
                 Últimos convites
               </h2>
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>
-                  Carregando...
-                </div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>Carregando...</div>
               ) : convites.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>
-                  Nenhum convite gerado ainda
-                </div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>Nenhum convite gerado ainda</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                  {convites.slice(0, 5).map(c => {
-                    const st = statusConvite(c)
-                    return (
-                      <div key={c._id} style={{
-                        backgroundColor: 'var(--background)', borderRadius: '12px',
-                        padding: '0.9rem 1.1rem', display: 'flex',
-                        alignItems: 'center', justifyContent: 'space-between', gap: '1rem'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{
-                            width: '36px', height: '36px', borderRadius: '9px',
-                            backgroundColor: st.cor + '20', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center', color: st.cor, flexShrink: 0
-                          }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                              <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '600', color: 'var(--text)', fontSize: '0.9rem' }}>
-                              {c.email}
-                            </div>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text)', opacity: 0.5 }}>
-                              {new Date(c.createdAt).toLocaleDateString('pt-BR')}
-                              {' · '}código: <span style={{ fontFamily: 'monospace', letterSpacing: '2px' }}>{c.codigo}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{
-                          backgroundColor: st.cor + '20', color: st.cor,
-                          padding: '0.28rem 0.8rem', borderRadius: '100px',
-                          fontSize: '0.78rem', fontWeight: '700', flexShrink: 0
-                        }}>
-                          {st.label}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {convites.slice(0, 5).map(c => <CardConvite key={c._id} c={c} />)}
                 </div>
               )}
             </div>
@@ -299,8 +327,6 @@ export default function DashboardAdmin() {
         {/* ABA CONVITES */}
         {aba === 'convites' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-            {/* Gerar convite */}
             <div style={s.card}>
               <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)', marginBottom: '0.3rem' }}>
                 Gerar novo convite
@@ -310,64 +336,41 @@ export default function DashboardAdmin() {
               </p>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <div style={{ flex: 1 }}>
-                  <input
-                    type="email"
-                    value={emailConvite}
-                    onChange={e => setEmailConvite(e.target.value)}
+                  <input type="email" value={emailConvite} onChange={e => setEmailConvite(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && gerarConvite()}
-                    placeholder="email@gestor.com"
-                    style={s.input}
+                    placeholder="email@gestor.com" style={s.input}
                     onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                    onBlur={e => e.target.style.border = '2px solid transparent'}
-                  />
+                    onBlur={e => e.target.style.border = '2px solid transparent'} />
                 </div>
-                <button onClick={gerarConvite} disabled={enviando} style={{
-                  backgroundColor: 'var(--primary)', color: 'white',
-                  border: 'none', padding: '0.75rem 1.5rem', borderRadius: '10px',
-                  fontSize: '0.9rem', fontWeight: '700', cursor: enviando ? 'not-allowed' : 'pointer',
-                  opacity: enviando ? 0.7 : 1, whiteSpace: 'nowrap',
-                  display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'opacity 0.2s'
-                }}>
-                  {enviando ? 'Enviando...' : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                      </svg>
-                      Enviar convite
-                    </>
-                  )}
-                </button>
+                <BotaoEnviar />
               </div>
             </div>
 
-            {/* Lista completa de convites */}
             <div style={s.card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)' }}>
                   Todos os convites ({convites.length})
                 </h2>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {['todos', 'pendente', 'usado', 'expirado'].map(f => (
-                    <span key={f} style={{
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {[
+                    { label: `${convites.length} total` },
+                    { label: `${convites.filter(c => !c.usado && new Date(c.expiresAt) > new Date()).length} pendentes` },
+                    { label: `${convites.filter(c => c.usado).length} usados` },
+                    { label: `${convites.filter(c => !c.usado && new Date(c.expiresAt) < new Date()).length} expirados` },
+                  ].map(f => (
+                    <span key={f.label} style={{
                       padding: '0.25rem 0.7rem', borderRadius: '100px',
                       fontSize: '0.75rem', fontWeight: '600',
-                      backgroundColor: 'var(--background)', color: 'var(--text)', opacity: 0.6,
-                      cursor: 'default'
+                      backgroundColor: 'var(--background)', color: 'var(--text)', opacity: 0.6
                     }}>
-                      {f === 'todos' ? `${convites.length} total` :
-                       f === 'pendente' ? `${convites.filter(c => !c.usado && new Date(c.expiresAt) > new Date()).length} pendentes` :
-                       f === 'usado' ? `${convites.filter(c => c.usado).length} usados` :
-                       `${convites.filter(c => !c.usado && new Date(c.expiresAt) < new Date()).length} expirados`}
+                      {f.label}
                     </span>
                   ))}
                 </div>
               </div>
 
               {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>
-                  Carregando...
-                </div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.4 }}>Carregando...</div>
               ) : convites.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem' }}>
                   <div style={{
@@ -381,63 +384,11 @@ export default function DashboardAdmin() {
                       <polyline points="22,6 12,13 2,6"/>
                     </svg>
                   </div>
-                  <p style={{ color: 'var(--text)', opacity: 0.4, fontSize: '0.9rem' }}>
-                    Nenhum convite gerado
-                  </p>
+                  <p style={{ color: 'var(--text)', opacity: 0.4, fontSize: '0.9rem' }}>Nenhum convite gerado</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                  {convites.map(c => {
-                    const st = statusConvite(c)
-                    return (
-                      <div key={c._id} style={{
-                        backgroundColor: 'var(--background)', borderRadius: '14px',
-                        padding: '1rem 1.25rem', display: 'flex',
-                        alignItems: 'center', justifyContent: 'space-between',
-                        gap: '1rem', flexWrap: 'wrap'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                          <div style={{
-                            width: '40px', height: '40px', borderRadius: '10px',
-                            backgroundColor: st.cor + '20', display: 'flex',
-                            alignItems: 'center', justifyContent: 'center',
-                            color: st.cor, flexShrink: 0
-                          }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                              <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: '700', color: 'var(--text)', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
-                              {c.email}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.5, display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                              <span>Criado em {new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
-                              <span>·</span>
-                              <span>Expira {new Date(c.expiresAt).toLocaleDateString('pt-BR')}</span>
-                              {c.criadoPor && <><span>·</span><span>por {c.criadoPor.nome}</span></>}
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span style={{
-                            fontFamily: 'monospace', fontSize: '1rem', fontWeight: '700',
-                            letterSpacing: '3px', color: 'var(--text)', opacity: 0.5
-                          }}>
-                            {c.codigo}
-                          </span>
-                          <div style={{
-                            backgroundColor: st.cor + '20', color: st.cor,
-                            padding: '0.3rem 0.85rem', borderRadius: '100px',
-                            fontSize: '0.78rem', fontWeight: '700'
-                          }}>
-                            {st.label}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {convites.map(c => <CardConvite key={c._id} c={c} />)}
                 </div>
               )}
             </div>
