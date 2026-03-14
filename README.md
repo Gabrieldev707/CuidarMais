@@ -12,6 +12,11 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb)
 ![Express](https://img.shields.io/badge/Express-v4.18.2-000000?style=for-the-badge&logo=express)
 ![Vite](https://img.shields.io/badge/Vite-v6.x-646CFF?style=for-the-badge&logo=vite)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-v3.x-06B6D4?style=for-the-badge&logo=tailwindcss)
+![GraphQL](https://img.shields.io/badge/GraphQL-Apollo-E10098?style=for-the-badge&logo=graphql)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens)
+![Zod](https://img.shields.io/badge/Zod-v4.x-3E67B1?style=for-the-badge&logo=zod)
+![Leaflet](https://img.shields.io/badge/Leaflet-Maps-199900?style=for-the-badge&logo=leaflet)
 
 [Funcionalidades](#-funcionalidades) · [Tecnologias](#-tecnologias) · [Documentação API](#-documentação-da-api) · [Como Rodar](#-como-rodar) · [Autores](#-autores)
 
@@ -64,6 +69,7 @@
 | Leaflet + React-Leaflet | v1.9.4 | Mapa interativo |
 | Axios | latest | Requisições HTTP |
 | Tailwind CSS | v3.x | Estilização utilitária |
+| Apollo Client | v4.x | Queries e mutations GraphQL |
 
 ### Backend
 | Tecnologia | Versão | Uso |
@@ -81,11 +87,6 @@
 | Zod | v4.x | Validação de dados nas rotas |
 | Apollo Server | v5.x | Servidor GraphQL |
 | graphql-tag | latest | Parser de queries GraphQL |
-
-### Frontend
-| Tecnologia | Versão | Uso |
-|---|---|---|
-| Apollo Client | v4.x | Queries e mutations GraphQL |
 
 ### Serviços Externos
 | Serviço | Uso |
@@ -405,7 +406,3 @@ Content-Type: application/json
 </table>
 
 ---
-
-<div align="center">
-  <sub>Desenvolvido com 💙 para a disciplina de Sistemas Da Informação — Unifacisa · Campina Grande, PB</sub>
-</div>
