@@ -15,7 +15,7 @@ const candidaturaRoutes = require('./routes/candidatura.routes');
 const adminRoutes = require('./routes/admin.routes');
 
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5173'],
     credentials: true,
 };
 
@@ -48,7 +48,7 @@ async function createApp() {
         '/graphql',
         cors(corsOptions),
         expressMiddleware(apolloServer, {
-            context: async ({ req }) => {
+            context: async({ req }) => {
                 const authHeader = req.headers.authorization || '';
                 if (authHeader.startsWith('Bearer ')) {
                     const token = authHeader.split(' ')[1];

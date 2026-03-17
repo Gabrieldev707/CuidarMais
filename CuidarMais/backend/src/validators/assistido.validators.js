@@ -8,10 +8,9 @@ const contatoEmergenciaSchema = z.object({
 
 const criarAssistidoSchema = z.object({
     nome: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
-    dataNascimento: z.string({ required_error: 'Data de nascimento é obrigatória' }).refine(
-        (val) => !isNaN(Date.parse(val)),
-        { message: 'Data de nascimento inválida' }
-    ),
+    dataNascimento: z.string({ required_error: 'Data de nascimento é obrigatória' })
+        .refine((val) => !isNaN(Date.parse(val)), { message: 'Data de nascimento inválida' })
+        .refine((val) => new Date(val) <= new Date(), { message: 'Data de nascimento não pode ser no futuro' }),
     perfil: z.enum(['idoso', 'dependente_quimico', 'saude_mental', 'vulnerabilidade_social'], {
         errorMap: () => ({ message: 'Perfil inválido' }),
     }),

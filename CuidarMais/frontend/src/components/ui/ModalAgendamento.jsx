@@ -17,6 +17,8 @@ export default function ModalAgendamento({ casa, onFechar }) {
   const [sucesso, setSucesso] = useState(false)
   const [erro, setErro] = useState('')
 
+  const hoje = new Date().toISOString().split('T')[0]
+
   const [form, setForm] = useState({
     nomeIdoso: '',
     dataNascimento: '',
@@ -26,6 +28,8 @@ export default function ModalAgendamento({ casa, onFechar }) {
     dataVisita: '',
     horario: '',
   })
+
+  const nascimentoFuturo = form.dataNascimento && form.dataNascimento > hoje
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -131,7 +135,7 @@ export default function ModalAgendamento({ casa, onFechar }) {
               Agendar Visita
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text)', opacity: 0.6 }}>
-              {casa.nome} · {casa.bairro}
+              {casa.nome} · {casa.endereco?.bairro}
             </p>
           </div>
           <button onClick={onFechar} style={{
@@ -238,7 +242,13 @@ export default function ModalAgendamento({ casa, onFechar }) {
               </div>
 
               <div>
-                <label style={labelStyle}>Nome completo</label>
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Nome completo
+                </label>
                 <input
                   type="text"
                   name="nomeIdoso"
@@ -252,20 +262,51 @@ export default function ModalAgendamento({ casa, onFechar }) {
               </div>
 
               <div>
-                <label style={labelStyle}>Data de nascimento</label>
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Data de nascimento
+                </label>
                 <input
                   type="date"
                   name="dataNascimento"
                   value={form.dataNascimento}
                   onChange={handleChange}
-                  style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'}
+                  max={hoje}
+                  style={{
+                    ...inputStyle,
+                    borderColor: nascimentoFuturo ? '#dc2626' : 'transparent'
+                  }}
+                  onFocus={e => { if (!nascimentoFuturo) e.target.style.borderColor = 'var(--primary)' }}
+                  onBlur={e => { if (!nascimentoFuturo) e.target.style.borderColor = 'transparent' }}
                 />
+                {nascimentoFuturo && (
+                  <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Data de nascimento não pode ser no futuro
+                  </p>
+                )}
               </div>
 
               <div>
-                <label style={labelStyle}>Nível de dependência</label>
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                  </svg>
+                  Nível de dependência
+                </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {[
                     { value: 'independente', label: 'Independente', desc: 'Realiza atividades sozinho' },
@@ -318,7 +359,12 @@ export default function ModalAgendamento({ casa, onFechar }) {
               </div>
 
               <div>
-                <label style={labelStyle}>Condições de saúde</label>
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                  Condições de saúde
+                </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {condicoesList.map(c => (
                     <button
@@ -344,7 +390,16 @@ export default function ModalAgendamento({ casa, onFechar }) {
               </div>
 
               <div>
-                <label style={labelStyle}>Observações importantes</label>
+                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  Observações importantes
+                </label>
                 <textarea
                   name="observacoes"
                   value={form.observacoes}
@@ -359,7 +414,7 @@ export default function ModalAgendamento({ casa, onFechar }) {
 
               <button
                 onClick={() => setEtapa(2)}
-                disabled={!form.nomeIdoso || !form.dataNascimento || !form.dependencia}
+                disabled={!form.nomeIdoso || !form.dataNascimento || !form.dependencia || nascimentoFuturo}
                 style={{
                   width: '100%',
                   backgroundColor: 'var(--primary)',
@@ -369,8 +424,8 @@ export default function ModalAgendamento({ casa, onFechar }) {
                   borderRadius: '12px',
                   fontSize: '0.95rem',
                   fontWeight: '600',
-                  cursor: !form.nomeIdoso || !form.dataNascimento || !form.dependencia ? 'not-allowed' : 'pointer',
-                  opacity: !form.nomeIdoso || !form.dataNascimento || !form.dependencia ? 0.5 : 1,
+                  cursor: !form.nomeIdoso || !form.dataNascimento || !form.dependencia || nascimentoFuturo ? 'not-allowed' : 'pointer',
+                  opacity: !form.nomeIdoso || !form.dataNascimento || !form.dependencia || nascimentoFuturo ? 0.5 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
