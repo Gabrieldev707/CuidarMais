@@ -1,0 +1,10 @@
+module.exports = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.usuario.role)) {
+      return res.status(403).json({ 
+        message: 'Acesso negado: permissão insuficiente' 
+      });
+    }
+    next();
+  };
+};
