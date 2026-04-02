@@ -9,14 +9,14 @@ const criarVisitaSchema = z.object({
             return new Date(val) >= hoje;
         }, { message: 'A data da visita não pode ser no passado' }),
     horario: z.enum(['manha', 'tarde'], {
-        errorMap: () => ({ message: 'Horário deve ser "manha" ou "tarde"' }),
+        error: () => ({ message: 'Horário deve ser "manha" ou "tarde"' }),
     }),
     observacoes: z.string().max(2000, 'Observações muito longas').optional(),
 });
 
 const atualizarStatusVisitaSchema = z.object({
     status: z.enum(['pendente', 'confirmada', 'cancelada', 'realizada'], {
-        errorMap: () => ({ message: 'Status inválido. Use: pendente, confirmada, cancelada ou realizada' }),
+        error: () => ({ message: 'Status inválido. Use: pendente, confirmada, cancelada ou realizada' }),
     }),
 });
 

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 :root {
     --text: #000;
     --text-light: #fff;
@@ -11,10 +12,12 @@
 }
 
 .dark {
-    --text: #F8F8F8;
-    --background: #0C326F;
-    --primary: #396DC0;
-    --secondary: #1e3a5f;
+    --text: #F0F0F0;
+    --text-light: #fff;
+    --background: #111111;
+    --primary: #4d83d8;
+    --primary-dark: #0C326F;
+    --secondary: #1c1c1c;
     --accent: #FABD10;
     --success: #46AD46;
 }
@@ -30,4 +33,102 @@ body {
     color: var(--text);
     font-family: 'Inter', sans-serif;
     transition: background-color 0.3s, color 0.3s;
+}
+
+/* ─── Responsive Grids ─── */
+.grid-cols-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+@media (max-width: 900px) {
+    .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+    .grid-cols-4 { grid-template-columns: 1fr; }
+}
+
+.grid-cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+@media (max-width: 900px) {
+    .grid-cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+    .grid-cols-3 { grid-template-columns: 1fr; }
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 3rem;
+}
+@media (max-width: 768px) {
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+}
+@media (max-width: 480px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* ─── Navbar Responsive ─── */
+.nav-links-desktop {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+.nav-actions-desktop {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.nav-hamburger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    color: var(--text);
+}
+.nav-mobile-menu {
+    display: none;
+    flex-direction: column;
+    background-color: var(--background);
+    padding: 1rem 1.5rem 1.5rem;
+    gap: 1rem;
+    border-top: 1px solid rgba(128,128,128,0.15);
+}
+.nav-mobile-menu.open {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .nav-links-desktop { display: none; }
+    .nav-actions-desktop { display: none; }
+    .nav-hamburger { display: flex; align-items: center; justify-content: center; }
+}
+
+/* ─── Seta conectora (ComoFunciona) ─── */
+.seta-conectora { display: block; }
+@media (max-width: 900px) {
+    .seta-conectora { display: none; }
+}
+
+/* ─── Mapa layout ─── */
+.mapa-layout {
+    display: grid;
+    gap: 1.5rem;
+    transition: grid-template-columns 0.3s;
+}
+.mapa-layout.sem-card { grid-template-columns: 1fr; }
+.mapa-layout.com-card { grid-template-columns: 1fr 360px; }
+@media (max-width: 768px) {
+    .mapa-layout.com-card { grid-template-columns: 1fr; }
 }

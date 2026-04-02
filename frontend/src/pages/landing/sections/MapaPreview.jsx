@@ -176,12 +176,7 @@ export default function MapaPreview() {
         </div>
 
         {/* Mapa + Card */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: casaSelecionada ? '1fr 360px' : '1fr',
-          gap: '1.5rem',
-          transition: 'all 0.3s'
-        }}>
+        <div className={`mapa-layout ${casaSelecionada ? 'com-card' : 'sem-card'}`}>
 
           {/* Mapa */}
           <div style={{

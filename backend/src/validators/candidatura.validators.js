@@ -8,7 +8,7 @@ const enviarCandidaturaSchema = z.object({
 
 const responderCandidaturaSchema = z.object({
     status: z.enum(['aceita', 'recusada'], {
-        errorMap: () => ({ message: 'Status deve ser "aceita" ou "recusada"' }),
+        error: () => ({ message: 'Status deve ser "aceita" ou "recusada"' }),
     }),
     respostaGestor: z.string().max(500, 'Resposta muito longa').optional(),
 });

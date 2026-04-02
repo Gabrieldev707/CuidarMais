@@ -12,7 +12,7 @@ const criarAssistidoSchema = z.object({
         .refine((val) => !isNaN(Date.parse(val)), { message: 'Data de nascimento inválida' })
         .refine((val) => new Date(val) <= new Date(), { message: 'Data de nascimento não pode ser no futuro' }),
     perfil: z.enum(['idoso', 'dependente_quimico', 'saude_mental', 'vulnerabilidade_social'], {
-        errorMap: () => ({ message: 'Perfil inválido' }),
+        error: () => ({ message: 'Perfil inválido' }),
     }),
     dependencia: z.enum(['independente', 'parcial', 'total']).optional(),
     condicoes: z.array(z.string()).optional(),

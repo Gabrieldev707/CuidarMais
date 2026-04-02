@@ -1,5 +1,4 @@
 import { createContext, useContext, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 const AuthContext = createContext()
 
@@ -23,7 +22,7 @@ export function AuthProvider({ children }) {
     setToken(null)
     localStorage.removeItem('usuario')
     localStorage.removeItem('token')
-    window.location.href = '/login'
+    window.location.replace('/login')
   }
 
   return (

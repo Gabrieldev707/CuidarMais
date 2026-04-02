@@ -12,6 +12,7 @@ export default function DashboardAdmin() {
   const [enviando, setEnviando] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
   const [toastTipo, setToastTipo] = useState('sucesso')
+  const [confirmandoId, setConfirmandoId] = useState(null)
 
   const toast = (msg, tipo = 'sucesso') => {
     setToastMsg(msg)
@@ -56,13 +57,14 @@ export default function DashboardAdmin() {
   }
 
   const deletarConvite = async (id) => {
-    if (!confirm('Tem certeza que quer remover este convite?')) return
     try {
       await api.delete(`/admin/convite/${id}`)
       toast('Convite removido!')
       carregarDados()
     } catch {
       toast('Erro ao remover convite', 'erro')
+    } finally {
+      setConfirmandoId(null)
     }
   }
 
@@ -162,26 +164,42 @@ export default function DashboardAdmin() {
           }}>
             {st.label}
           </div>
-          <button
-            onClick={() => deletarConvite(c._id)}
-            title="Remover convite"
-            style={{
-              backgroundColor: '#e87c7c20', color: '#e87c7c',
-              border: 'none', width: '34px', height: '34px',
-              borderRadius: '8px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'background 0.2s', flexShrink: 0
-            }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e87c7c40'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e87c7c20'}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4h6v2"/>
-            </svg>
-          </button>
+          {confirmandoId === c._id ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.7 }}>Remover?</span>
+              <button onClick={() => deletarConvite(c._id)} style={{
+                backgroundColor: '#e87c7c', color: 'white', border: 'none',
+                padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer',
+                fontSize: '0.78rem', fontWeight: '700'
+              }}>Sim</button>
+              <button onClick={() => setConfirmandoId(null)} style={{
+                backgroundColor: 'var(--secondary)', color: 'var(--text)', border: 'none',
+                padding: '0.3rem 0.7rem', borderRadius: '6px', cursor: 'pointer',
+                fontSize: '0.78rem', fontWeight: '600'
+              }}>Não</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmandoId(c._id)}
+              title="Remover convite"
+              style={{
+                backgroundColor: '#e87c7c20', color: '#e87c7c',
+                border: 'none', width: '34px', height: '34px',
+                borderRadius: '8px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.2s', flexShrink: 0
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e87c7c40'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e87c7c20'}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4h6v2"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     )

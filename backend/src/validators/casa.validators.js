@@ -25,7 +25,7 @@ const criarCasaSchema = z.object({
     nome: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
     descricao: z.string().min(10, 'Descrição deve ter ao menos 10 caracteres'),
     tipo: z.enum(['idosos', 'dependentes_quimicos', 'saude_mental', 'vulnerabilidade_social'], {
-        errorMap: () => ({ message: 'Tipo inválido' }),
+        error: () => ({ message: 'Tipo inválido' }),
     }),
     endereco: enderecoSchema,
     capacidade: z.number({ required_error: 'Capacidade é obrigatória' }).int().min(1, 'Capacidade mínima é 1'),

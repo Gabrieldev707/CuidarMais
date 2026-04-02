@@ -7,13 +7,7 @@ export default function Footer() {
       borderTop: '1px solid var(--primary-dark)',
       padding: '3rem 2rem'
     }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr 1fr',
-        gap: '3rem'
-      }}>
+      <div className="footer-grid" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Logo e descrição */}
         <div>
           <div style={{

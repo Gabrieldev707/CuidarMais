@@ -86,11 +86,7 @@ export default function CasasDestaque() {
           </a>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '1.5rem'
-        }}>
+        <div className="grid-cols-3">
           {casas.map(casa => (
             <div key={casa.id} style={{
               backgroundColor: 'var(--secondary)',

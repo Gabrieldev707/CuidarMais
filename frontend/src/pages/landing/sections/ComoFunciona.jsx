@@ -90,11 +90,7 @@ export default function ComoFunciona() {
         </div>
 
         {/* Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '1.5rem'
-        }}>
+        <div className="grid-cols-4">
           {passos.map((passo, index) => (
             <div key={passo.numero} style={{
               backgroundColor: 'var(--secondary)',
@@ -155,7 +151,7 @@ export default function ComoFunciona() {
 
               {/* Seta conectora */}
               {index < passos.length - 1 && (
-                <div style={{
+                <div className="seta-conectora" style={{
                   position: 'absolute',
                   right: '-1rem',
                   top: '50%',

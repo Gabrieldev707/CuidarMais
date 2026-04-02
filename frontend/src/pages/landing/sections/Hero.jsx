@@ -9,11 +9,10 @@ import Logo from '../../../assets/logo.svg'
 export default function Hero() {
   return (
     <section style={{
-      minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       backgroundColor: 'var(--background)',
-      padding: '2rem',
+      padding: '5rem 2rem',
       position: 'relative',
       overflow: 'hidden'
     }}>

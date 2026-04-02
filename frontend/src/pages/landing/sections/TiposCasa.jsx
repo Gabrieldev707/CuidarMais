@@ -129,7 +129,7 @@ export default function TiposCasas() {
               {/* TÍTULO */}
               <div style={{
                 fontWeight: '700',
-                color: 'var(--primary-dark)',
+                color: 'var(--text)',
                 fontSize: '1rem',
                 textAlign: 'center',
                 maxWidth: '160px'

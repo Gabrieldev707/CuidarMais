@@ -15,7 +15,7 @@ const candidaturaRoutes = require('./routes/candidatura.routes');
 const adminRoutes = require('./routes/admin.routes');
 
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5173'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
     credentials: true,
 };
 
