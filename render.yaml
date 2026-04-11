@@ -5,6 +5,7 @@ services:
     rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
+    port: 5000
     envVars:
       - key: NODE_ENV
         value: production
