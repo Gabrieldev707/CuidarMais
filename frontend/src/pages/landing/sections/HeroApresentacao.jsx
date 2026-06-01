@@ -6,7 +6,7 @@ import IconDecor from '../../../assets/help.svg'
 
 export default function HeroApresentacao() {
   return (
-    <section style={{
+    <section id="sobre" style={{
       background: 'linear-gradient(135deg, #0C326F 0%, #11479D 79%, #165CCB 100%)',
       position: 'relative',
       overflow: 'hidden',

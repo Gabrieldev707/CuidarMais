@@ -63,7 +63,7 @@ export default function Hero() {
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <Link to="/" style={{
+            <a href="/buscar-casas#mapa" style={{
               backgroundColor: 'var(--primary)',
               color: 'white',
               padding: '0.9rem 1.8rem',
@@ -72,7 +72,7 @@ export default function Hero() {
               fontWeight: '600'
             }}>
               Buscar Casas
-            </Link>
+            </a>
 
             <Link to="/cadastro" style={{
               border: '2px solid var(--primary)',

@@ -17,6 +17,13 @@ export default function Navbar() {
     opacity: 0.8
   }
 
+  const sectionLinks = [
+    { label: 'Como Funciona', href: '/#como-funciona' },
+    { label: 'Buscar Casas', href: '/buscar-casas#mapa' },
+    { label: 'Casas Avaliadas', href: '/casas#casas' },
+    { label: 'Sobre', href: '/#sobre' }
+  ]
+
   return (
     <nav style={{
       backgroundColor: 'var(--background)',
@@ -49,10 +56,11 @@ export default function Navbar() {
 
         {/* LINKS — desktop */}
         <div className="nav-links-desktop">
-          <Link to="/#como-funciona" style={linkStyle}>Como Funciona</Link>
-          <Link to="/#mapa" style={linkStyle}>Mapa</Link>
-          <Link to="/#casas" style={linkStyle}>Casas</Link>
-          <Link to="/#sobre" style={linkStyle}>Sobre</Link>
+          {sectionLinks.map(link => (
+            <a key={link.href} href={link.href} style={linkStyle}>
+              {link.label}
+            </a>
+          ))}
         </div>
 
         {/* AÇÕES — desktop */}
@@ -139,10 +147,16 @@ export default function Navbar() {
 
       {/* ─── Menu mobile ─── */}
       <div className={`nav-mobile-menu ${menuAberto ? 'open' : ''}`}>
-        <Link to="/#como-funciona" style={linkStyle} onClick={() => setMenuAberto(false)}>Como Funciona</Link>
-        <Link to="/#mapa" style={linkStyle} onClick={() => setMenuAberto(false)}>Mapa</Link>
-        <Link to="/#casas" style={linkStyle} onClick={() => setMenuAberto(false)}>Casas</Link>
-        <Link to="/#sobre" style={linkStyle} onClick={() => setMenuAberto(false)}>Sobre</Link>
+        {sectionLinks.map(link => (
+          <a
+            key={link.href}
+            href={link.href}
+            style={linkStyle}
+            onClick={() => setMenuAberto(false)}
+          >
+            {link.label}
+          </a>
+        ))}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(128,128,128,0.15)', flexWrap: 'wrap' }}>
           <button onClick={() => { toggleDarkMode(); setMenuAberto(false) }} style={{

@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
-
 export default function Footer() {
+  const contatoEmail = 'contato@cuidarmais.com.br'
+
   return (
-    <footer style={{
+    <footer id="contato" style={{
       backgroundColor: 'var(--primary-dark)',
       borderTop: '1px solid var(--primary-dark)',
       padding: '3rem 2rem'
@@ -23,10 +23,21 @@ export default function Footer() {
             fontSize: '0.9rem',
             color: 'var(--text-light)',
             lineHeight: '1.6',
-            maxWidth: '260px'
+            maxWidth: '260px',
+            marginBottom: '1rem'
           }}>
             Conectando famílias às melhores casas de apoio para idosos em Campina Grande.
           </p>
+
+          <a href={`mailto:${contatoEmail}`} style={{
+            color: 'var(--text-light)',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            opacity: 0.9
+          }}>
+            {contatoEmail}
+          </a>
         </div>
 
         {/* Links */}
@@ -34,8 +45,8 @@ export default function Footer() {
           {
             titulo: 'Plataforma',
             links: [
-              { label: 'Como Funciona', href: '#como-funciona' },
-              { label: 'Buscar Casas', href: '#mapa' },
+              { label: 'Como Funciona', href: '/#como-funciona' },
+              { label: 'Buscar Casas', href: '/buscar-casas#mapa' },
               { label: 'Cadastrar Casa', href: '/cadastro' },
             ]
           },
@@ -50,9 +61,9 @@ export default function Footer() {
           {
             titulo: 'Sobre',
             links: [
-              { label: 'O Projeto', href: '#sobre' },
-              { label: 'Contato', href: '#' },
-              { label: 'Universidade', href: '#' },
+              { label: 'O Projeto', href: '/#sobre' },
+              { label: 'Contato', href: '/#contato' },
+              { label: 'Universidade', href: '/#contato' },
             ]
           }
         ].map(col => (
@@ -70,14 +81,14 @@ export default function Footer() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               {col.links.map(link => (
-                <Link key={link.label} to={link.href} style={{
+                <a key={link.label} href={link.href} style={{
                   color: 'var(--text-light)',
                   textDecoration: 'none',
                   fontSize: '0.9rem',
                   transition: 'opacity 0.2s'
                 }}>
                   {link.label}
-                </Link>
+                </a>
               ))}
             </div>
           </div>

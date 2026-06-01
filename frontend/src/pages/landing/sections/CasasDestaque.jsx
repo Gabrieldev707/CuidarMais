@@ -60,16 +60,18 @@ export default function CasasDestaque() {
             }}>
               Em destaque
             </div>
-            <h2 style={{
-              fontSize: '2.5rem',
-              fontWeight: '800',
-              color: 'var(--text)',
-              letterSpacing: '-0.5px'
-            }}>
-              Casas mais bem avaliadas
-            </h2>
+            <a href="/casas#casas" style={{ color: 'inherit', textDecoration: 'none' }}>
+              <h2 style={{
+                fontSize: '2.5rem',
+                fontWeight: '800',
+                color: 'var(--text)',
+                letterSpacing: '-0.5px'
+              }}>
+                Casas mais bem avaliadas
+              </h2>
+            </a>
           </div>
-          <a href="#mapa" style={{
+          <a href="/buscar-casas#mapa" style={{
             color: 'var(--primary)',
             textDecoration: 'none',
             fontWeight: '600',
@@ -205,15 +207,17 @@ export default function CasasDestaque() {
                   ))}
                 </div>
 
-                <button style={{
+                <a href="/buscar-casas#mapa" style={{
+                  display: 'block',
                   width: '100%',
                   backgroundColor: 'var(--primary)',
                   color: 'white',
-                  border: 'none',
                   padding: '0.75rem',
                   borderRadius: '10px',
                   fontSize: '0.9rem',
                   fontWeight: '600',
+                  textAlign: 'center',
+                  textDecoration: 'none',
                   cursor: 'pointer',
                   transition: 'opacity 0.2s'
                 }}
@@ -221,7 +225,7 @@ export default function CasasDestaque() {
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
                   Ver detalhes
-                </button>
+                </a>
               </div>
             </div>
           ))}

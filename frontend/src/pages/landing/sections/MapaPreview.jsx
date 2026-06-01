@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import ModalAgendamento from '../../../components/ui/ModalAgendamento'
+import { Link } from 'react-router-dom'
 
 const cores = {
   idosos: '#80a6c6',
@@ -72,7 +72,6 @@ export default function MapaPreview() {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const [casaSelecionada, setCasaSelecionada] = useState(null)
-  const [modalCasa, setModalCasa] = useState(null)
 
   useEffect(() => {
     if (mapInstanceRef.current) return
@@ -345,17 +344,19 @@ export default function MapaPreview() {
 
               {/* Botões */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto' }}>
-                <button
-                  onClick={() => setModalCasa(casaSelecionada)}
+                <Link
+                  to="/login"
                   style={{
                     backgroundColor: 'var(--primary)',
                     color: 'white',
+                    display: 'block',
                     padding: '0.85rem',
                     borderRadius: '12px',
-                    border: 'none',
                     width: '100%',
                     fontWeight: '600',
                     fontSize: '0.95rem',
+                    textAlign: 'center',
+                    textDecoration: 'none',
                     cursor: 'pointer',
                     transition: 'opacity 0.2s'
                   }}
@@ -363,7 +364,7 @@ export default function MapaPreview() {
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
                   Agendar Visita
-                </button>
+                </Link>
                 <button
                   onClick={() => setCasaSelecionada(null)}
                   style={{
@@ -414,14 +415,6 @@ export default function MapaPreview() {
           ))}
         </div>
       </div>
-
-      {/* Modal de agendamento */}
-      {modalCasa && (
-        <ModalAgendamento
-          casa={modalCasa}
-          onFechar={() => setModalCasa(null)}
-        />
-      )}
     </section>
   )
 }

@@ -53,7 +53,7 @@ export default function CTA() {
           </Link>
 
           {/* BOTÃO SECUNDÁRIO */}
-          <Link to="#mapa" style={{
+          <a href="/buscar-casas#mapa" style={{
             backgroundColor: 'transparent',
             color: 'var(--primary)',
             padding: '0.9rem 2.2rem',
@@ -64,7 +64,7 @@ export default function CTA() {
             border: '2px solid var(--primary)'
           }}>
             Explorar o mapa
-          </Link>
+          </a>
 
         </div>
       </div>

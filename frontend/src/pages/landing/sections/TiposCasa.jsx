@@ -52,7 +52,7 @@ const categorias = [
 
 export default function TiposCasas() {
   return (
-    <section style={{
+    <section id="tipos" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--background)'
     }}>
