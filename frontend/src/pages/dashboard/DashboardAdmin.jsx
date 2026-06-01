@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
+import { getApiError } from '../../services/errors'
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
@@ -45,12 +46,14 @@ export default function DashboardAdmin() {
     }
     setEnviando(true)
     try {
-      await api.post('/admin/convite', { email: emailConvite })
-      toast(`Convite enviado para ${emailConvite}!`)
+      const { data } = await api.post('/admin/convite', { email: emailConvite })
+      toast(data.emailEnviado === false
+        ? `Convite gerado. Codigo: ${data.codigo}`
+        : `Convite enviado para ${emailConvite}!`)
       setEmailConvite('')
       carregarDados()
     } catch (err) {
-      toast(err.response?.data?.message || 'Erro ao enviar convite', 'erro')
+      toast(getApiError(err, 'Erro ao enviar convite'), 'erro')
     } finally {
       setEnviando(false)
     }
@@ -218,7 +221,8 @@ export default function DashboardAdmin() {
             fontWeight: '600', fontSize: '0.9rem',
             boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             display: 'flex', alignItems: 'center', gap: '0.6rem',
-            animation: 'slideIn 0.3s ease'
+            animation: 'slideIn 0.3s ease',
+            whiteSpace: 'pre-line'
           }}>
             {toastTipo === 'sucesso'
               ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>

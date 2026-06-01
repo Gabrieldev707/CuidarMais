@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import ModalAgendamento from '../../components/ui/ModalAgendamento'
 import api from '../../services/api'
+import { getApiError } from '../../services/errors'
 
 const statusCandidaturaConfig = {
   pendente: { label: 'Pendente', cor: '#e8a87c', bg: '#e8a87c18' },
@@ -105,10 +106,13 @@ function ModalAssistido({ onFechar, onSalvo }) {
         ...form,
         condicoes: form.condicoes ? form.condicoes.split(',').map(c => c.trim()).filter(Boolean) : []
       }
+      const contato = payload.contatoEmergencia || {}
+      const contatoVazio = !contato.nome?.trim() && !contato.telefone?.trim() && !contato.parentesco?.trim()
+      if (contatoVazio) delete payload.contatoEmergencia
       const { data } = await api.post('/assistidos', payload)
       onSalvo(data.assistido)
     } catch (err) {
-      setErro(err.response?.data?.message || 'Erro ao cadastrar')
+      setErro(getApiError(err, 'Erro ao cadastrar'))
     } finally {
       setLoading(false)
     }
@@ -141,7 +145,7 @@ function ModalAssistido({ onFechar, onSalvo }) {
         </div>
 
         {erro && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+          <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', fontSize: '0.85rem', whiteSpace: 'pre-line' }}>
             {erro}
           </div>
         )}
@@ -268,7 +272,7 @@ function ModalCandidatura({ casa, assistido, onFechar, onEnviado }) {
       })
       onEnviado()
     } catch (err) {
-      setErro(err.response?.data?.message || 'Erro ao enviar candidatura')
+      setErro(getApiError(err, 'Erro ao enviar candidatura'))
     } finally {
       setLoading(false)
     }
@@ -308,7 +312,7 @@ function ModalCandidatura({ casa, assistido, onFechar, onEnviado }) {
         </div>
 
         {erro && (
-          <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+          <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '10px', marginBottom: '1rem', fontSize: '0.85rem', whiteSpace: 'pre-line' }}>
             {erro}
           </div>
         )}

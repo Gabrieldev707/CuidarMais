@@ -3,49 +3,35 @@ const nodemailer = require('nodemailer')
 const ConviteGestor = require('../models/ConviteGestor')
 const User = require('../models/User')
 
-exports.gerarConvite = async(req, res) => {
-    try {
-        const { email } = req.body
+const normalizarEmail = (email) => email.trim().toLowerCase()
 
-        if (!email) {
-            return res.status(400).json({ message: 'Email obrigatório' })
+const enviarEmailConvite = async({ email, codigo }) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return { enviado: false, erro: 'Credenciais de email nao configuradas' }
+    }
+
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        tls: {
+            rejectUnauthorized: false
         }
+    })
 
-        const usuarioExistente = await User.findOne({ email })
-        if (usuarioExistente) {
-            return res.status(400).json({ message: 'Este email já possui uma conta' })
-        }
-
-        await ConviteGestor.updateMany({ email, usado: false }, { usado: true })
-
-        const codigo = crypto.randomBytes(4).toString('hex').toUpperCase()
-
-        await ConviteGestor.create({
-            email,
-            codigo,
-            criadoPor: req.usuario.id
-        })
-
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            },
-            tls: {
-                rejectUnauthorized: false
-            }
-        })
-
-        await transporter.sendMail({
-            from: `"CuidarMais" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: 'Seu convite para ser gestor no CuidarMais',
-            html: `
+    await transporter.sendMail({
+        from: `"CuidarMais" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Seu convite para ser gestor no CuidarMais',
+        html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
           <h2 style="color: #80a6c6;">CuidarMais</h2>
-          <p>Você foi convidado para cadastrar sua casa de apoio na plataforma <strong>CuidarMais</strong>.</p>
-          <p>Use o código abaixo para criar sua conta como gestor:</p>
+          <p>Voce foi convidado para cadastrar sua casa de apoio na plataforma <strong>CuidarMais</strong>.</p>
+          <p>Use o codigo abaixo para criar sua conta como gestor:</p>
           <div style="
             background: #f2e2cf;
             border-radius: 12px;
@@ -61,20 +47,55 @@ exports.gerarConvite = async(req, res) => {
             ">${codigo}</span>
           </div>
           <p style="color: #666; font-size: 0.9rem;">
-            Este código expira em 48 horas. Acesse 
-            <a href="http://localhost:5174/cadastro" style="color: #80a6c6;">CuidarMais</a> 
-            e selecione "Gestor" para usar o código.
+            Este codigo expira em 48 horas. Acesse
+            <a href="http://localhost:5174/cadastro" style="color: #80a6c6;">CuidarMais</a>
+            e selecione "Gestor" para usar o codigo.
           </p>
           <p style="color: #999; font-size: 0.8rem;">
-            Se você não esperava este email, pode ignorá-lo.
+            Se voce nao esperava este email, pode ignorar.
           </p>
         </div>
       `
+    })
+
+    return { enviado: true }
+}
+
+exports.gerarConvite = async(req, res) => {
+    try {
+        const email = normalizarEmail(req.body.email)
+
+        const usuarioExistente = await User.findOne({ email })
+        if (usuarioExistente) {
+            return res.status(400).json({ message: 'Este email ja possui uma conta' })
+        }
+
+        await ConviteGestor.updateMany({ email, usado: false }, { usado: true })
+
+        const codigo = crypto.randomBytes(4).toString('hex').toUpperCase()
+
+        const convite = await ConviteGestor.create({
+            email,
+            codigo,
+            criadoPor: req.usuario.id
         })
 
+        let resultadoEmail
+        try {
+            resultadoEmail = await enviarEmailConvite({ email, codigo })
+        } catch (error) {
+            resultadoEmail = { enviado: false, erro: error.message }
+            console.error('Erro ao enviar email de convite:', error.message)
+        }
+
         res.status(201).json({
-            message: `Convite enviado para ${email}`,
-            codigo
+            message: resultadoEmail.enviado ?
+                `Convite enviado para ${email}` :
+                `Convite gerado para ${email}, mas o email nao foi enviado. Use o codigo exibido no painel.`,
+            codigo,
+            convite,
+            emailEnviado: resultadoEmail.enviado,
+            emailErro: resultadoEmail.erro
         })
     } catch (error) {
         res.status(500).json({ message: 'Erro ao gerar convite', error: error.message })
@@ -106,14 +127,14 @@ exports.validarCodigo = async(req, res) => {
         const { email, codigo } = req.body
 
         const convite = await ConviteGestor.findOne({
-            email: email.toLowerCase(),
-            codigo: codigo.toUpperCase(),
+            email: normalizarEmail(email),
+            codigo: codigo.trim().toUpperCase(),
             usado: false,
             expiresAt: { $gt: new Date() }
         })
 
         if (!convite) {
-            return res.status(400).json({ message: 'Código inválido ou expirado' })
+            return res.status(400).json({ message: 'Codigo invalido ou expirado' })
         }
 
         res.json({ valido: true })

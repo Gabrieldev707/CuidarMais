@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
+import { getApiError } from '../../services/errors'
 
 const statusConfig = {
   pendente: { label: 'Pendente', cor: '#e8a87c' },
@@ -158,22 +159,26 @@ export default function DashboardGestor() {
 
   const handleSubmit = async () => {
     setErro('')
-    if (!form.nome || !form.tipo || !form.capacidade || !form.endereco.rua || !form.endereco.cep) {
-      setErro('Preencha os campos obrigatórios: nome, tipo, capacidade e endereço.')
+    if (!form.nome || !form.tipo || !form.capacidade || !form.descricao || !form.endereco.cep || !form.endereco.rua || !form.endereco.numero || !form.endereco.bairro) {
+      setErro('Preencha os campos obrigatorios: nome, tipo, descricao, capacidade e endereco.')
       return
     }
     setSalvando(true)
     try {
-      await api.post('/casas', {
+      const payload = {
         ...form,
         capacidade: Number(form.capacidade),
         vagasDisponiveis: Number(form.vagasDisponiveis || form.capacidade)
-      })
+      }
+      if (!payload.telefone.trim()) delete payload.telefone
+      if (!payload.email.trim()) delete payload.email
+
+      await api.post('/casas', payload)
       setSucesso(true)
       setForm(formInicial)
       setTimeout(() => setSucesso(false), 4000)
     } catch (err) {
-      setErro(err.response?.data?.message || 'Erro ao cadastrar casa')
+      setErro(getApiError(err, 'Erro ao cadastrar casa'))
     } finally {
       setSalvando(false)
     }
@@ -420,7 +425,7 @@ export default function DashboardGestor() {
             {erro && (
               <div style={{
                 backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '12px',
-                padding: '1rem 1.25rem', marginBottom: '1.5rem', fontSize: '0.9rem'
+                padding: '1rem 1.25rem', marginBottom: '1.5rem', fontSize: '0.9rem', whiteSpace: 'pre-line'
               }}>
                 {erro}
               </div>

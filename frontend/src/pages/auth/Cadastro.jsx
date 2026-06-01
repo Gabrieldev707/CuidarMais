@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
+import { getApiError } from '../../services/errors'
 
 export default function Cadastro() {
   const { login } = useAuth()
@@ -29,7 +30,7 @@ export default function Cadastro() {
       login(data.usuario, data.token)
       navigate('/dashboard')
     } catch (err) {
-      setErro(err.response?.data?.message || 'Erro ao criar conta')
+      setErro(getApiError(err, 'Erro ao criar conta'))
     } finally {
       setLoading(false)
     }
@@ -108,7 +109,8 @@ export default function Cadastro() {
               padding: '0.75rem 1rem',
               borderRadius: '10px',
               fontSize: '0.9rem',
-              marginBottom: '1.5rem'
+              marginBottom: '1.5rem',
+              whiteSpace: 'pre-line'
             }}>
               {erro}
             </div>

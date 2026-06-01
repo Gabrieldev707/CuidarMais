@@ -14,8 +14,25 @@ const assistidoRoutes = require('./routes/assistido.routes');
 const candidaturaRoutes = require('./routes/candidatura.routes');
 const adminRoutes = require('./routes/admin.routes');
 
+// Origens permitidas: localhost (dev) + FRONTEND_URL (prod) + qualquer deploy *.vercel.app
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+];
+if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+    origin(origin, callback) {
+        // requests sem origin (curl, health checks, mobile) são permitidos
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(new URL(origin).hostname)) {
+            return callback(null, true);
+        }
+        return callback(new Error(`Origin não permitida pelo CORS: ${origin}`));
+    },
     credentials: true,
 };
 

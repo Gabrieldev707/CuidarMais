@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const ConviteGestor = require('../models/ConviteGestor');
 
+const normalizarEmail = (email) => email.trim().toLowerCase();
+
 const gerarToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
@@ -10,7 +12,8 @@ const gerarToken = (id, role) => {
 
 exports.register = async(req, res) => {
     try {
-        const { nome, email, senha, telefone, role, codigoConvite } = req.body;
+        const { nome, senha, telefone, role, codigoConvite } = req.body;
+        const email = normalizarEmail(req.body.email);
 
         const usuarioExiste = await User.findOne({ email });
         if (usuarioExiste) {
@@ -23,8 +26,8 @@ exports.register = async(req, res) => {
             }
 
             const convite = await ConviteGestor.findOne({
-                email: email.toLowerCase(),
-                codigo: codigoConvite.toUpperCase(),
+                email,
+                codigo: codigoConvite.trim().toUpperCase(),
                 usado: false,
                 expiresAt: { $gt: new Date() }
             });
@@ -33,13 +36,18 @@ exports.register = async(req, res) => {
                 return res.status(400).json({ message: 'Código de convite inválido ou expirado' });
             }
 
-            convite.usado = true;
-            await convite.save();
+            req.conviteGestor = convite;
         }
 
         const roleSeguro = role === 'admin' ? 'familia' : (role || 'familia');
 
         const usuario = await User.create({ nome, email, senha, telefone, role: roleSeguro });
+
+        if (req.conviteGestor) {
+            req.conviteGestor.usado = true;
+            await req.conviteGestor.save();
+        }
+
         const token = gerarToken(usuario._id, usuario.role);
 
         res.status(201).json({
@@ -59,7 +67,8 @@ exports.register = async(req, res) => {
 
 exports.login = async(req, res) => {
     try {
-        const { email, senha } = req.body;
+        const { senha } = req.body;
+        const email = normalizarEmail(req.body.email);
 
         const usuario = await User.findOne({ email }).select('+senha');
         if (!usuario) {
@@ -100,7 +109,8 @@ exports.perfil = async(req, res) => {
 // TEMPORÁRIO - só para desenvolvimento, remover antes de produção
 exports.registerDev = async(req, res) => {
     try {
-        const { nome, email, senha, telefone, role } = req.body;
+        const { nome, senha, telefone, role } = req.body;
+        const email = normalizarEmail(req.body.email);
 
         const usuarioExiste = await User.findOne({ email });
         if (usuarioExiste) {

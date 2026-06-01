@@ -1,16 +1,25 @@
 const { z } = require('zod');
 
+const optionalTrimmedString = (schema) =>
+    z.preprocess((value) => {
+        if (typeof value !== 'string') return value;
+        const trimmed = value.trim();
+        return trimmed === '' ? undefined : trimmed;
+    }, schema.optional());
+
+const coordsSchema = z.object({
+    lat: z.coerce.number({ required_error: 'Latitude e obrigatoria' }),
+    lng: z.coerce.number({ required_error: 'Longitude e obrigatoria' }),
+}).optional();
+
 const enderecoSchema = z.object({
-    rua: z.string().min(3, 'Rua é obrigatória'),
-    numero: z.string().min(1, 'Número é obrigatório'),
-    bairro: z.string().min(2, 'Bairro é obrigatório'),
-    cidade: z.string().min(2, 'Cidade é obrigatória'),
-    estado: z.string().length(2, 'Estado deve ter 2 letras').default('PB'),
-    cep: z.string().regex(/^\d{5}-?\d{3}$/, 'CEP inválido'),
-    coords: z.object({
-        lat: z.number({ required_error: 'Latitude é obrigatória' }),
-        lng: z.number({ required_error: 'Longitude é obrigatória' }),
-    }),
+    rua: z.string().trim().min(3, 'Rua e obrigatoria'),
+    numero: z.string().trim().min(1, 'Numero e obrigatorio'),
+    bairro: z.string().trim().min(2, 'Bairro e obrigatorio'),
+    cidade: z.string().trim().min(2, 'Cidade e obrigatoria'),
+    estado: z.string().trim().length(2, 'Estado deve ter 2 letras').default('PB'),
+    cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, 'CEP invalido'),
+    coords: coordsSchema,
 });
 
 const servicosEnum = z.enum([
@@ -22,23 +31,23 @@ const servicosEnum = z.enum([
 ]);
 
 const criarCasaSchema = z.object({
-    nome: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
-    descricao: z.string().min(10, 'Descrição deve ter ao menos 10 caracteres'),
+    nome: z.string().trim().min(3, 'Nome deve ter ao menos 3 caracteres'),
+    descricao: z.string().trim().min(10, 'Descricao deve ter ao menos 10 caracteres'),
     tipo: z.enum(['idosos', 'dependentes_quimicos', 'saude_mental', 'vulnerabilidade_social'], {
-        error: () => ({ message: 'Tipo inválido' }),
+        error: () => ({ message: 'Tipo invalido' }),
     }),
     endereco: enderecoSchema,
-    capacidade: z.number({ required_error: 'Capacidade é obrigatória' }).int().min(1, 'Capacidade mínima é 1'),
-    vagasDisponiveis: z.number({ required_error: 'Vagas disponíveis são obrigatórias' }).int().min(0),
-    servicos: z.array(servicosEnum).min(1, 'Informe ao menos um serviço').optional(),
-    telefone: z.string().min(10, 'Telefone inválido').optional(),
-    email: z.string().email('Email inválido').optional(),
+    capacidade: z.coerce.number({ required_error: 'Capacidade e obrigatoria' }).int().min(1, 'Capacidade minima e 1'),
+    vagasDisponiveis: z.coerce.number({ required_error: 'Vagas disponiveis sao obrigatorias' }).int().min(0),
+    servicos: z.array(servicosEnum).optional(),
+    telefone: optionalTrimmedString(z.string().min(10, 'Telefone invalido')),
+    email: optionalTrimmedString(z.string().email('Email invalido')),
 });
 
 const atualizarCasaSchema = criarCasaSchema.partial();
 
 const atualizarVagasSchema = z.object({
-    vagasDisponiveis: z.number({ required_error: 'Vagas disponíveis são obrigatórias' }).int().min(0),
+    vagasDisponiveis: z.coerce.number({ required_error: 'Vagas disponiveis sao obrigatorias' }).int().min(0),
 });
 
 module.exports = { criarCasaSchema, atualizarCasaSchema, atualizarVagasSchema };

@@ -1,5 +1,15 @@
 const Casa = require('../models/Casa');
 
+const COORDS_PADRAO_CAMPINA_GRANDE = {
+    lat: -7.2291,
+    lng: -35.8808
+};
+
+const temCoordsValidas = (coords) =>
+    coords &&
+    Number.isFinite(Number(coords.lat)) &&
+    Number.isFinite(Number(coords.lng));
+
 // Converte endereço em coordenadas usando Nominatim (OpenStreetMap) - gratuito
 const geocodificarEndereco = async(endereco) => {
     try {
@@ -70,7 +80,7 @@ exports.criarCasa = async(req, res) => {
         const dados = {...req.body, gestorId: req.usuario.id }
 
         // Geocodificação automática se não tiver coordenadas
-        if (dados.endereco && (!dados.endereco.coords || !dados.endereco.coords.lat || !dados.endereco.coords.lng)) {
+        if (dados.endereco && !temCoordsValidas(dados.endereco.coords)) {
             const coords = await geocodificarEndereco(dados.endereco)
             if (coords) {
                 dados.endereco.coords = coords
@@ -78,6 +88,11 @@ exports.criarCasa = async(req, res) => {
             } else {
                 console.warn('Não foi possível geocodificar o endereço')
             }
+        }
+
+        if (dados.endereco && !temCoordsValidas(dados.endereco.coords)) {
+            dados.endereco.coords = COORDS_PADRAO_CAMPINA_GRANDE
+            console.warn('Nao foi possivel geocodificar o endereco; usando coordenadas padrao de Campina Grande')
         }
 
         const casa = await Casa.create(dados)
