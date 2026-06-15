@@ -70,7 +70,8 @@ const casaSchema = new mongoose.Schema({
     gestorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        unique: true
     },
     telefone: { type: String },
     email: { type: String },
@@ -88,6 +89,16 @@ const casaSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+casaSchema.virtual('candidaturas', {
+    ref: 'Candidatura',
+    localField: '_id',
+    foreignField: 'casaId'
+});
 
 module.exports = mongoose.model('Casa', casaSchema);

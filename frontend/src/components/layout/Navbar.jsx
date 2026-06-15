@@ -35,7 +35,7 @@ export default function Navbar() {
       boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
     }}>
       {/* ─── Barra principal ─── */}
-      <div style={{
+      <div className="nav-inner" style={{
         maxWidth: '1200px',
         margin: '0 auto',
         padding: '0 2rem',
@@ -48,7 +48,7 @@ export default function Navbar() {
         {/* LOGO */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
           <img src={Logo} alt="CuidarMais" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '1.4rem', fontWeight: '700', letterSpacing: '-0.5px' }}>
+          <span className="brand-text" style={{ fontSize: '1.4rem', fontWeight: '700', letterSpacing: '-0.5px' }}>
             <span style={{ color: 'var(--accent)' }}>Cuidar</span>
             <span style={{ color: 'var(--success)' }}>Mais</span>
           </span>

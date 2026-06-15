@@ -8,14 +8,39 @@
 **Conectando famílias a casas de apoio com tecnologia, cuidado e agilidade.**
 
 ![React](https://img.shields.io/badge/React-v19.x-61DAFB?style=for-the-badge&logo=react)
-![Node.js](https://img.shields.io/badge/Node.js-v24.11.0-339933?style=for-the-badge&logo=node.js)
+![Node.js](https://img.shields.io/badge/Node.js-20.19%2B-339933?style=for-the-badge&logo=node.js)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb)
 ![Express](https://img.shields.io/badge/Express-v4.18.2-000000?style=for-the-badge&logo=express)
-![Vite](https://img.shields.io/badge/Vite-v6.x-646CFF?style=for-the-badge&logo=vite)
+![Vite](https://img.shields.io/badge/Vite-v7.x-646CFF?style=for-the-badge&logo=vite)
 
-[Funcionalidades](#-funcionalidades) · [Tecnologias](#-tecnologias) · [Documentação API](#-documentação-da-api) · [Como Rodar](#-como-rodar) · [Autores](#-autores)
+[Aplicação](https://cuidarmais.vercel.app) · [API](https://cuidarmais-backend-production.up.railway.app) · [Funcionalidades](#-funcionalidades-principais) · [Como Rodar](#-como-rodar)
 
 </div>
+
+---
+
+## 🌐 Ambiente Publicado
+
+| Serviço | URL |
+|---|---|
+| Frontend | https://cuidarmais.vercel.app |
+| API REST | https://cuidarmais-backend-production.up.railway.app/api |
+| Healthcheck | https://cuidarmais-backend-production.up.railway.app/health |
+| GraphQL | https://cuidarmais-backend-production.up.railway.app/graphql |
+
+### Credenciais de demonstração
+
+As contas abaixo usam a senha `CuidarMais@2026`:
+
+| Perfil | Email | Estado inicial |
+|---|---|---|
+| Família | `familia.demo@cuidarmais.com` | Possui um assistido fictício |
+| Gestor | `gestor.demo@cuidarmais.com` | Possui uma casa fictícia |
+| Admin | `admin.demo@cuidarmais.com` | Somente leitura |
+
+A conta admin pública não pode gerar ou excluir convites. Códigos e emails de convites também são mascarados para evitar exposição de dados reais.
+
+> Essas credenciais são exclusivas do ambiente demonstrativo. Nunca reutilize essa senha em contas pessoais ou administrativas reais.
 
 ---
 
@@ -32,6 +57,8 @@
 - Estatísticas pessoais (visitas agendadas, realizadas, casas visitadas, candidaturas)
 
 ### 🏡 Dashboard Gestor
+- Relacionamento 1:1: cada gestor administra no máximo uma casa
+- Onboarding automático para gestores que ainda não cadastraram a casa
 - Cadastro de casas com geocodificação automática via **Nominatim (OSM)**
 - Preenchimento automático de endereço por CEP via **ViaCEP**
 - Seleção de serviços oferecidos (18 categorias)
@@ -46,7 +73,7 @@
 - Estatísticas globais do sistema (usuários, gestores, casas, visitas)
 
 ### 🔐 Autenticação
-- Registro com validação por papel (família, gestor, admin)
+- Cadastro público para família e cadastro de gestor mediante convite
 - Sistema de convite exclusivo para gestores (código de 8 caracteres, validade de 48h)
 - Autenticação via **JWT** com expiração de 90 dias
 - Proteção de rotas por role com middleware dedicado
@@ -312,7 +339,7 @@ Todas as queries e mutations já estão definidas em `frontend/src/graphql/queri
 ## 🚀 Como Rodar
 
 ### Pré-requisitos
-- Node.js v18+
+- Node.js 20.19 até 24.x
 - Conta no [MongoDB Atlas](https://www.mongodb.com/atlas)
 - Conta Gmail com [senha de app](https://support.google.com/accounts/answer/185833) habilitada
 
@@ -338,12 +365,19 @@ npm install --prefix frontend
 
 Crie `backend/.env`:
 ```env
+NODE_ENV=development
 PORT=5000
 MONGO_URI=sua_connection_string_mongodb_atlas
-JWT_SECRET=sua_chave_secreta
+JWT_SECRET=use_um_segredo_com_no_minimo_32_caracteres
 JWT_EXPIRES_IN=90d
 EMAIL_USER=seuemail@gmail.com
 EMAIL_PASS=sua_senha_de_app_gmail
+EMAIL_FROM="CuidarMais <seuemail@gmail.com>"
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REJECT_UNAUTHORIZED=true
+FRONTEND_URL=http://localhost:5174
 ```
 
 Crie `frontend/.env`:
@@ -353,7 +387,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ### 4. Rode o projeto
 ```bash
-# Na raiz — sobe backend (porta 5000) e frontend (porta 5173) juntos
+# Na raiz — sobe backend (porta 5000) e frontend (porta 5174) juntos
 npm run dev
 
 # Ou separadamente:
@@ -365,9 +399,68 @@ npm run frontend   # só o frontend
 
 | Serviço | URL |
 |---|---|
-| Frontend | http://localhost:5173 |
+| Frontend | http://localhost:5174 |
 | Backend API | http://localhost:5000/api |
 | GraphQL Sandbox | http://localhost:5000/graphql |
+
+### Contas demo no banco local
+
+```bash
+npm run seed:demo
+```
+
+O comando é idempotente: cria ou atualiza as três contas documentadas acima, além do assistido e da casa fictícia.
+
+### Verificação antes do deploy
+
+```bash
+npm run check
+```
+
+Esse comando valida a sintaxe do backend, executa o ESLint e gera o build de produção do frontend.
+
+---
+
+## 🚢 Deploy
+
+### Railway
+
+Configure o diretório raiz do serviço como `backend` e cadastre:
+
+```env
+NODE_ENV=production
+MONGO_URI=...
+JWT_SECRET=...
+JWT_EXPIRES_IN=90d
+FRONTEND_URL=https://cuidarmais.vercel.app
+EMAIL_USER=...
+EMAIL_PASS=...
+EMAIL_FROM="CuidarMais <email-configurado@gmail.com>"
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REJECT_UNAUTHORIZED=true
+```
+
+O Railway executa `npm start` e verifica `/health`. Para recriar os dados demonstrativos, execute `npm run seed:demo` no serviço.
+
+Em produção, os índices não são alterados automaticamente durante o boot. Depois de revisar possíveis dados legados duplicados, aplique os índices declarados pelos models com:
+
+```bash
+npm run sync:indexes
+```
+
+O comando interrompe a operação e lista as casas envolvidas caso encontre mais de uma casa para o mesmo gestor.
+
+### Vercel
+
+Configure o diretório raiz como `frontend`. A variável utilizada no build é:
+
+```env
+VITE_API_URL=https://cuidarmais-backend-production.up.railway.app/api
+```
+
+O arquivo `vercel.json` contém o rewrite da SPA e headers básicos de segurança.
 
 ---
 

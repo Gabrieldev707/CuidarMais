@@ -65,6 +65,24 @@ exports.listarCasas = async(req, res) => {
     }
 };
 
+exports.minhasCasas = async(req, res) => {
+    try {
+        const casa = await Casa.findOne({
+            gestorId: req.usuario.id,
+            ativo: true
+        });
+
+        res.json({
+            total: casa ? 1 : 0,
+            casa,
+            // Mantido para compatibilidade com clientes anteriores.
+            casas: casa ? [casa] : []
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor', error: error.message });
+    }
+};
+
 exports.buscarCasa = async(req, res) => {
     try {
         const casa = await Casa.findById(req.params.id).populate('gestorId', 'nome email telefone');
@@ -77,6 +95,13 @@ exports.buscarCasa = async(req, res) => {
 
 exports.criarCasa = async(req, res) => {
     try {
+        const casaExistente = await Casa.exists({ gestorId: req.usuario.id });
+        if (casaExistente) {
+            return res.status(409).json({
+                message: 'Este gestor já possui uma casa cadastrada'
+            });
+        }
+
         const dados = {...req.body, gestorId: req.usuario.id }
 
         // Geocodificação automática se não tiver coordenadas
@@ -98,6 +123,12 @@ exports.criarCasa = async(req, res) => {
         const casa = await Casa.create(dados)
         res.status(201).json({ message: 'Casa criada com sucesso', casa });
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({
+                message: 'Este gestor já possui uma casa cadastrada'
+            });
+        }
+
         res.status(500).json({ message: 'Erro no servidor', error: error.message });
     }
 };

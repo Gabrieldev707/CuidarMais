@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 import { getApiError } from '../../services/errors'
 
-const statusConfig = {
+const statusVisita = {
   pendente: { label: 'Pendente', cor: '#e8a87c' },
   confirmada: { label: 'Confirmada', cor: '#7ab894' },
   cancelada: { label: 'Cancelada', cor: '#e87c7c' },
   realizada: { label: 'Realizada', cor: '#80a6c6' }
+}
+
+const statusCandidatura = {
+  pendente: { label: 'Pendente', cor: '#e8a87c' },
+  em_analise: { label: 'Em análise', cor: '#80a6c6' },
+  aceita: { label: 'Aceita', cor: '#7ab894' },
+  recusada: { label: 'Recusada', cor: '#e87c7c' }
 }
 
 const tiposOpcoes = [
@@ -38,7 +46,7 @@ const servicosOpcoes = [
   { label: 'Medicamentos', value: 'medicamentos' }
 ]
 
-const formInicial = {
+const criarFormInicial = () => ({
   nome: '',
   descricao: '',
   tipo: '',
@@ -55,7 +63,7 @@ const formInicial = {
     estado: 'PB',
     cep: ''
   }
-}
+})
 
 const inputStyle = {
   width: '100%',
@@ -67,8 +75,7 @@ const inputStyle = {
   fontSize: '0.9rem',
   outline: 'none',
   boxSizing: 'border-box',
-  fontFamily: 'inherit',
-  transition: 'border 0.2s'
+  fontFamily: 'inherit'
 }
 
 const labelStyle = {
@@ -80,40 +87,167 @@ const labelStyle = {
   marginBottom: '0.35rem'
 }
 
+const cardStyle = {
+  backgroundColor: 'var(--secondary)',
+  borderRadius: '20px',
+  padding: '1.5rem'
+}
+
+const actionButton = (cor) => ({
+  backgroundColor: `${cor}25`,
+  color: cor,
+  border: 'none',
+  padding: '0.55rem 1rem',
+  borderRadius: '8px',
+  fontSize: '0.85rem',
+  fontWeight: '700',
+  cursor: 'pointer'
+})
+
+const formatarData = (data) => (
+  data ? new Date(data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data não definida'
+)
+
+function EstadoVazio({ texto }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text)', opacity: 0.55 }}>
+      {texto}
+    </div>
+  )
+}
+
+function Alerta({ tipo = 'erro', children }) {
+  const sucesso = tipo === 'sucesso'
+  return (
+    <div style={{
+      backgroundColor: sucesso ? '#7ab89420' : '#fee2e2',
+      color: sucesso ? '#56886b' : '#dc2626',
+      border: `1px solid ${sucesso ? '#7ab894' : '#fecaca'}`,
+      borderRadius: '12px',
+      padding: '0.9rem 1.1rem',
+      marginBottom: '1.25rem',
+      fontSize: '0.9rem',
+      whiteSpace: 'pre-line'
+    }}>
+      {children}
+    </div>
+  )
+}
+
 export default function DashboardGestor() {
   const { usuario } = useAuth()
-  const [aba, setAba] = useState('visitas')
+  const location = useLocation()
+  const [aba, setAba] = useState(
+    location.state?.onboardingGestor || location.state?.verificarCasaGestor ? 'inicio' : 'visitas'
+  )
   const [visitas, setVisitas] = useState([])
+  const [candidaturas, setCandidaturas] = useState([])
+  const [casa, setCasa] = useState(null)
+  const [vagasEdicao, setVagasEdicao] = useState('')
   const [loading, setLoading] = useState(true)
-  const [form, setForm] = useState(formInicial)
+  const [erroDados, setErroDados] = useState('')
+  const [erroAcao, setErroAcao] = useState('')
+  const [processandoId, setProcessandoId] = useState('')
+  const [form, setForm] = useState(criarFormInicial)
   const [salvando, setSalvando] = useState(false)
-  const [sucesso, setSucesso] = useState(false)
-  const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
 
-  useEffect(() => {
-    api.get('/visitas/minhas')
-      .then(({ data }) => setVisitas(data.visitas))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+  const carregarDados = useCallback(async () => {
+    setLoading(true)
+    setErroDados('')
+
+    const resultados = await Promise.allSettled([
+      api.get('/casas/minhas'),
+      api.get('/visitas/minhas'),
+      api.get('/candidaturas/gestor')
+    ])
+
+    const mensagens = []
+    const [resCasas, resVisitas, resCandidaturas] = resultados
+
+    if (resCasas.status === 'fulfilled') {
+      const casaRecebida = resCasas.value.data.casa || resCasas.value.data.casas?.[0] || null
+      setCasa(casaRecebida)
+      setVagasEdicao(casaRecebida ? String(casaRecebida.vagasDisponiveis) : '')
+      if (casaRecebida) {
+        setAba(abaAtual => ['inicio', 'cadastrar'].includes(abaAtual) ? 'casa' : abaAtual)
+      } else {
+        setAba(abaAtual => abaAtual === 'cadastrar' ? 'cadastrar' : 'inicio')
+      }
+    } else {
+      mensagens.push(getApiError(resCasas.reason, 'Não foi possível carregar sua casa'))
+    }
+
+    if (resVisitas.status === 'fulfilled') {
+      setVisitas(resVisitas.value.data.visitas || [])
+    } else {
+      mensagens.push(getApiError(resVisitas.reason, 'Não foi possível carregar as visitas'))
+    }
+
+    if (resCandidaturas.status === 'fulfilled') {
+      setCandidaturas(resCandidaturas.value.data.candidaturas || [])
+    } else {
+      mensagens.push(getApiError(resCandidaturas.reason, 'Não foi possível carregar as candidaturas'))
+    }
+
+    if (mensagens.length) {
+      setErroDados([...new Set(mensagens)].join('\n'))
+    }
+    setLoading(false)
   }, [])
 
-  const atualizarStatus = async (id, status) => {
+  useEffect(() => {
+    carregarDados()
+  }, [carregarDados])
+
+  const executarAcao = async (id, acao) => {
+    setErroAcao('')
+    setSucesso('')
+    setProcessandoId(id)
     try {
-      await api.patch(`/visitas/${id}/status`, { status })
-      setVisitas(prev => prev.map(v => v._id === id ? { ...v, status } : v))
+      await acao()
     } catch (err) {
-      console.error(err)
+      setErroAcao(getApiError(err, 'Não foi possível concluir a operação'))
+    } finally {
+      setProcessandoId('')
     }
   }
+
+  const atualizarStatusVisita = (id, status) => executarAcao(id, async () => {
+    await api.patch(`/visitas/${id}/status`, { status })
+    setVisitas(prev => prev.map(visita => (
+      visita._id === id ? { ...visita, status } : visita
+    )))
+    setSucesso('Status da visita atualizado.')
+  })
+
+  const responderCandidatura = (id, status) => executarAcao(id, async () => {
+    await api.patch(`/candidaturas/${id}/responder`, { status })
+    setCandidaturas(prev => prev.map(candidatura => (
+      candidatura._id === id ? { ...candidatura, status } : candidatura
+    )))
+    setSucesso(status === 'aceita' ? 'Candidatura aceita.' : 'Candidatura recusada.')
+  })
+
+  const atualizarVagas = () => executarAcao(casa._id, async () => {
+    const vagasDisponiveis = Number(vagasEdicao)
+    if (!Number.isInteger(vagasDisponiveis) || vagasDisponiveis < 0 || vagasDisponiveis > casa.capacidade) {
+      throw new Error(`Informe um valor entre 0 e ${casa.capacidade}`)
+    }
+
+    await api.patch(`/casas/${casa._id}/vagas`, { vagasDisponiveis })
+    setCasa(prev => ({ ...prev, vagasDisponiveis }))
+    setSucesso(`Vagas de ${casa.nome} atualizadas.`)
+  })
 
   const buscarCep = async (cep) => {
     const cepLimpo = cep.replace(/\D/g, '')
     if (cepLimpo.length !== 8) return
     setBuscandoCep(true)
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-      const data = await res.json()
+      const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+      const data = await response.json()
       if (!data.erro) {
         setForm(prev => ({
           ...prev,
@@ -127,15 +261,15 @@ export default function DashboardGestor() {
           }
         }))
       }
-    } catch (e) {
-      console.error('Erro ao buscar CEP:', e)
+    } catch {
+      setErroAcao('Não foi possível consultar o CEP. Preencha o endereço manualmente.')
     } finally {
       setBuscandoCep(false)
     }
   }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
+  const handleChange = (event) => {
+    const { name, value } = event.target
     if (name.startsWith('endereco.')) {
       const campo = name.split('.')[1]
       setForm(prev => ({
@@ -143,26 +277,37 @@ export default function DashboardGestor() {
         endereco: { ...prev.endereco, [campo]: value }
       }))
       if (campo === 'cep') buscarCep(value)
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }))
+      return
     }
+    setForm(prev => ({ ...prev, [name]: value }))
   }
 
   const toggleServico = (value) => {
     setForm(prev => ({
       ...prev,
       servicos: prev.servicos.includes(value)
-        ? prev.servicos.filter(x => x !== value)
+        ? prev.servicos.filter(item => item !== value)
         : [...prev.servicos, value]
     }))
   }
 
-  const handleSubmit = async () => {
-    setErro('')
-    if (!form.nome || !form.tipo || !form.capacidade || !form.descricao || !form.endereco.cep || !form.endereco.rua || !form.endereco.numero || !form.endereco.bairro) {
-      setErro('Preencha os campos obrigatorios: nome, tipo, descricao, capacidade e endereco.')
+  const cadastrarCasa = async (event) => {
+    event.preventDefault()
+    setErroAcao('')
+    setSucesso('')
+
+    if (casa) {
+      setErroAcao('Este gestor já possui uma casa cadastrada.')
+      setAba('casa')
       return
     }
+
+    if (!form.nome || !form.tipo || !form.capacidade || !form.descricao ||
+        !form.endereco.cep || !form.endereco.rua || !form.endereco.numero || !form.endereco.bairro) {
+      setErroAcao('Preencha os campos obrigatórios: nome, tipo, descrição, capacidade e endereço.')
+      return
+    }
+
     setSalvando(true)
     try {
       const payload = {
@@ -173,434 +318,579 @@ export default function DashboardGestor() {
       if (!payload.telefone.trim()) delete payload.telefone
       if (!payload.email.trim()) delete payload.email
 
-      await api.post('/casas', payload)
-      setSucesso(true)
-      setForm(formInicial)
-      setTimeout(() => setSucesso(false), 4000)
+      const { data } = await api.post('/casas', payload)
+      setCasa(data.casa)
+      setVagasEdicao(String(data.casa.vagasDisponiveis))
+      setForm(criarFormInicial())
+      setSucesso('Casa cadastrada com sucesso e salva no banco.')
+      setAba('casa')
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
     } catch (err) {
-      setErro(getApiError(err, 'Erro ao cadastrar casa'))
+      setErroAcao(getApiError(err, 'Erro ao cadastrar casa'))
     } finally {
       setSalvando(false)
     }
   }
 
-  const pendentes = visitas.filter(v => v.status === 'pendente')
-  const confirmadas = visitas.filter(v => v.status === 'confirmada')
+  const pendentes = visitas.filter(visita => visita.status === 'pendente')
+  const candidaturasPendentes = candidaturas.filter(item => (
+    item.status === 'pendente' || item.status === 'em_analise'
+  ))
+
+  const abas = casa
+    ? [
+        { key: 'visitas', label: `Visitas (${visitas.length})` },
+        { key: 'candidaturas', label: `Candidaturas (${candidaturasPendentes.length})` },
+        { key: 'casa', label: 'Minha casa' }
+      ]
+    : [
+        { key: 'inicio', label: 'Boas-vindas' },
+        { key: 'cadastrar', label: 'Cadastrar minha casa' }
+      ]
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '2rem' }}>
+    <main className="gestor-page" style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '2rem' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-
-        {/* Header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem'
+        <header className="gestor-header" style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1.5rem',
+          gap: '1rem'
         }}>
           <div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--text)', marginBottom: '0.2rem' }}>
               Painel do Gestor
             </h1>
             <p style={{ color: 'var(--text)', opacity: 0.6, fontSize: '0.95rem' }}>
-              Olá, {usuario.nome.split(' ')[0]} — gerencie sua casa e visitas
+              {casa
+                ? `Olá, ${usuario?.nome?.split(' ')[0] || 'gestor'} — gerencie sua casa, candidaturas e visitas`
+                : `Olá, ${usuario?.nome?.split(' ')[0] || 'gestor'} — vamos preparar seu espaço no CuidarMais`}
             </p>
           </div>
+          <button type="button" onClick={carregarDados} disabled={loading} style={actionButton('#395f7f')}>
+            {loading ? 'Atualizando...' : 'Atualizar dados'}
+          </button>
+        </header>
 
-          <div style={{
-            display: 'flex', backgroundColor: 'var(--secondary)',
-            borderRadius: '12px', padding: '0.3rem', gap: '0.25rem'
+        <nav className="gestor-tabs" aria-label="Seções do painel" style={{
+          display: 'flex',
+          backgroundColor: 'var(--secondary)',
+          borderRadius: '14px',
+          padding: '0.35rem',
+          gap: '0.3rem',
+          marginBottom: '1.5rem'
+        }}>
+          {abas.map(item => (
+            <button
+              type="button"
+              key={item.key}
+              onClick={() => {
+                setAba(item.key)
+                setErroAcao('')
+                setSucesso('')
+              }}
+              style={{
+                flex: 1,
+                padding: '0.7rem 0.85rem',
+                borderRadius: '10px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.86rem',
+                fontWeight: '700',
+                backgroundColor: aba === item.key ? 'var(--background)' : 'transparent',
+                color: aba === item.key ? 'var(--primary)' : 'var(--text)'
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {erroDados && (
+          <Alerta>
+            {erroDados}
+            {'\n'}Verifique se o backend está rodando e se o IP foi liberado no MongoDB Atlas.
+          </Alerta>
+        )}
+        {erroAcao && <Alerta>{erroAcao}</Alerta>}
+        {sucesso && <Alerta tipo="sucesso">{sucesso}</Alerta>}
+
+        {casa && (
+          <section className="gestor-stats" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '1rem',
+            marginBottom: '1.5rem'
           }}>
             {[
-              {
-                key: 'visitas', label: 'Visitas',
-                icone: (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                )
-              },
-              {
-                key: 'cadastrar', label: 'Cadastrar Casa',
-                icone: (
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                )
-              }
-            ].map(a => (
-              <button key={a.key} onClick={() => setAba(a.key)} style={{
-                display: 'flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.55rem 1rem', borderRadius: '9px', border: 'none',
-                cursor: 'pointer', fontSize: '0.88rem', fontWeight: '600',
-                backgroundColor: aba === a.key ? 'var(--background)' : 'transparent',
-                color: aba === a.key ? 'var(--primary)' : 'var(--text)',
-                boxShadow: aba === a.key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.2s'
+              { label: 'Casa cadastrada', valor: 1, cor: '#9b8fc4' },
+              { label: 'Candidaturas pendentes', valor: candidaturasPendentes.length, cor: '#e8a87c' },
+              { label: 'Visitas pendentes', valor: pendentes.length, cor: '#e8a87c' },
+              { label: 'Visitas confirmadas', valor: visitas.filter(item => item.status === 'confirmada').length, cor: '#7ab894' }
+            ].map(item => (
+              <div key={item.label} style={{
+                backgroundColor: 'var(--secondary)',
+                borderRadius: '16px',
+                padding: '1.2rem',
+                borderLeft: `4px solid ${item.cor}`
               }}>
-                {a.icone}{a.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-          {[
-            { label: 'Pendentes', valor: pendentes.length, cor: '#e8a87c' },
-            { label: 'Confirmadas', valor: confirmadas.length, cor: '#7ab894' },
-            { label: 'Realizadas', valor: visitas.filter(v => v.status === 'realizada').length, cor: '#80a6c6' },
-            { label: 'Total', valor: visitas.length, cor: '#9b8fc4' }
-          ].map(stat => (
-            <div key={stat.label} style={{
-              backgroundColor: 'var(--secondary)', borderRadius: '16px',
-              padding: '1.25rem', borderLeft: `4px solid ${stat.cor}`
-            }}>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: stat.cor, lineHeight: 1, marginBottom: '0.3rem' }}>
-                {stat.valor}
+                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: item.cor }}>{item.valor}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.65 }}>{item.label}</div>
               </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text)', opacity: 0.6 }}>{stat.label}</div>
+            ))}
+          </section>
+        )}
+
+        {aba === 'inicio' && !casa && (
+          <section style={{
+            ...cardStyle,
+            background: 'linear-gradient(135deg, var(--secondary), var(--background))',
+            border: '1px solid rgba(128, 166, 198, 0.25)'
+          }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              display: 'grid',
+              placeItems: 'center',
+              backgroundColor: '#7ab89425',
+              color: '#56886b',
+              marginBottom: '1rem'
+            }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
             </div>
-          ))}
-        </div>
+            <h2 style={{ color: 'var(--text)', fontSize: '1.3rem', marginBottom: '0.5rem' }}>
+              Sua conta de gestor está pronta
+            </h2>
+            <p style={{
+              color: 'var(--text)',
+              opacity: 0.68,
+              lineHeight: 1.6,
+              maxWidth: '650px',
+              marginBottom: '1.5rem'
+            }}>
+              Agora cadastre a casa que você administra. Depois disso, o painel será liberado para receber candidaturas,
+              organizar visitas e atualizar as vagas disponíveis.
+            </p>
 
-        {/* ABA VISITAS */}
-        {aba === 'visitas' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-            {pendentes.length > 0 && (
-              <div style={{ backgroundColor: 'var(--secondary)', borderRadius: '20px', padding: '1.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#e8a87c' }} />
-                  <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)' }}>
-                    Visitas pendentes ({pendentes.length})
-                  </h2>
+            <div className="gestor-onboarding-steps" style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: '0.75rem',
+              marginBottom: '1.5rem'
+            }}>
+              {[
+                { numero: '1', titulo: 'Conta criada', texto: 'Convite validado e acesso liberado.', concluido: true },
+                { numero: '2', titulo: 'Cadastrar casa', texto: 'Informe endereço, capacidade e serviços.' },
+                { numero: '3', titulo: 'Começar a gerenciar', texto: 'Receba candidaturas e visitas.' }
+              ].map(etapa => (
+                <div key={etapa.numero} style={{
+                  backgroundColor: 'var(--secondary)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  border: `1px solid ${etapa.concluido ? '#7ab89470' : 'transparent'}`
+                }}>
+                  <div style={{
+                    color: etapa.concluido ? '#56886b' : 'var(--primary)',
+                    fontWeight: '800',
+                    fontSize: '0.8rem',
+                    marginBottom: '0.4rem'
+                  }}>
+                    ETAPA {etapa.numero}{etapa.concluido ? ' · CONCLUÍDA' : ''}
+                  </div>
+                  <div style={{ color: 'var(--text)', fontWeight: '700', marginBottom: '0.25rem' }}>
+                    {etapa.titulo}
+                  </div>
+                  <div style={{ color: 'var(--text)', opacity: 0.58, fontSize: '0.8rem', lineHeight: 1.45 }}>
+                    {etapa.texto}
+                  </div>
                 </div>
+              ))}
+            </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {pendentes.map(visita => (
-                    <div key={visita._id} style={{
-                      backgroundColor: 'var(--background)', borderRadius: '14px', padding: '1.25rem',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      gap: '1rem', flexWrap: 'wrap'
+            <button type="button" onClick={() => setAba('cadastrar')} style={{
+              backgroundColor: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              padding: '0.85rem 1.25rem',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontWeight: '800',
+              fontSize: '0.95rem'
+            }}>
+              Cadastrar minha casa
+            </button>
+          </section>
+        )}
+
+        {casa && aba === 'visitas' && (
+          <section style={cardStyle}>
+            <h2 style={{ fontSize: '1.05rem', color: 'var(--text)', marginBottom: '1.25rem' }}>
+              Visitas da sua casa
+            </h2>
+            {loading ? (
+              <EstadoVazio texto="Carregando visitas..." />
+            ) : visitas.length === 0 ? (
+              <EstadoVazio texto="Nenhuma visita encontrada para sua casa." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {visitas.map(visita => {
+                  const status = statusVisita[visita.status] || statusVisita.pendente
+                  return (
+                    <article key={visita._id} className="gestor-row" style={{
+                      backgroundColor: 'var(--background)',
+                      borderRadius: '13px',
+                      padding: '1.1rem 1.2rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '1rem'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                        <div style={{
-                          width: '42px', height: '42px', borderRadius: '10px',
-                          backgroundColor: '#e8a87c25', display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', color: '#e8a87c', flexShrink: 0
-                        }}>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                          </svg>
+                      <div>
+                        <strong style={{ color: 'var(--text)' }}>
+                          {visita.responsavelId?.nome || 'Responsável'}
+                        </strong>
+                        <div style={{ color: 'var(--text)', opacity: 0.62, fontSize: '0.82rem', marginTop: '0.25rem' }}>
+                          {visita.casaId?.nome || 'Casa'} · {formatarData(visita.data)} · {visita.horario === 'manha' ? 'Manhã' : 'Tarde'}
                         </div>
+                        {visita.observacoes && (
+                          <div style={{ color: 'var(--text)', opacity: 0.55, fontSize: '0.8rem', marginTop: '0.35rem' }}>
+                            {visita.observacoes}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                        <span style={{
+                          backgroundColor: `${status.cor}25`,
+                          color: status.cor,
+                          padding: '0.35rem 0.8rem',
+                          borderRadius: '999px',
+                          fontSize: '0.78rem',
+                          fontWeight: '700'
+                        }}>
+                          {status.label}
+                        </span>
+                        {visita.status === 'pendente' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={processandoId === visita._id}
+                              onClick={() => atualizarStatusVisita(visita._id, 'cancelada')}
+                              style={actionButton('#e87c7c')}
+                            >
+                              Recusar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={processandoId === visita._id}
+                              onClick={() => atualizarStatusVisita(visita._id, 'confirmada')}
+                              style={actionButton('#7ab894')}
+                            >
+                              Confirmar
+                            </button>
+                          </>
+                        )}
+                        {visita.status === 'confirmada' && (
+                          <button
+                            type="button"
+                            disabled={processandoId === visita._id}
+                            onClick={() => atualizarStatusVisita(visita._id, 'realizada')}
+                            style={actionButton('#80a6c6')}
+                          >
+                            Marcar realizada
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {casa && aba === 'candidaturas' && (
+          <section style={cardStyle}>
+            <h2 style={{ fontSize: '1.05rem', color: 'var(--text)', marginBottom: '1.25rem' }}>
+              Candidaturas recebidas
+            </h2>
+            {loading ? (
+              <EstadoVazio texto="Carregando candidaturas..." />
+            ) : candidaturas.length === 0 ? (
+              <EstadoVazio texto="Nenhuma candidatura recebida." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {candidaturas.map(candidatura => {
+                  const status = statusCandidatura[candidatura.status] || statusCandidatura.pendente
+                  return (
+                    <article key={candidatura._id} style={{
+                      backgroundColor: 'var(--background)',
+                      borderRadius: '14px',
+                      padding: '1.25rem'
+                    }}>
+                      <div className="gestor-row" style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '1rem'
+                      }}>
                         <div>
-                          <div style={{ fontWeight: '700', color: 'var(--text)', marginBottom: '0.2rem' }}>
-                            {visita.responsavelId?.nome || 'Responsável'}
+                          <strong style={{ color: 'var(--text)', fontSize: '1rem' }}>
+                            {candidatura.assistidoId?.nome || 'Assistido'}
+                          </strong>
+                          <div style={{ color: 'var(--text)', opacity: 0.62, fontSize: '0.82rem', marginTop: '0.3rem' }}>
+                            Para {candidatura.casaId?.nome || 'sua casa'} · Responsável: {candidatura.responsavelId?.nome || 'não informado'}
                           </div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--text)', opacity: 0.6 }}>
-                            {visita.data ? new Date(visita.data).toLocaleDateString('pt-BR') : 'Data não definida'}
-                            {' · '}{visita.horario === 'manha' ? 'Manhã' : 'Tarde'}
-                          </div>
-                          {visita.observacoes && (
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.5, marginTop: '0.2rem', maxWidth: '380px' }}>
-                              {visita.observacoes.substring(0, 90)}...
+                          {candidatura.responsavelId?.telefone && (
+                            <div style={{ color: 'var(--text)', opacity: 0.62, fontSize: '0.82rem', marginTop: '0.2rem' }}>
+                              Contato: {candidatura.responsavelId.telefone}
                             </div>
                           )}
                         </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '0.6rem' }}>
-                        <button onClick={() => atualizarStatus(visita._id, 'cancelada')} style={{
-                          backgroundColor: '#e87c7c25', color: '#e87c7c',
-                          border: 'none', padding: '0.5rem 1rem', borderRadius: '8px',
-                          fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer'
-                        }}>
-                          Recusar
-                        </button>
-                        <button onClick={() => atualizarStatus(visita._id, 'confirmada')} style={{
-                          backgroundColor: '#7ab89425', color: '#7ab894',
-                          border: 'none', padding: '0.5rem 1rem', borderRadius: '8px',
-                          fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer'
-                        }}>
-                          Confirmar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={{ backgroundColor: 'var(--secondary)', borderRadius: '20px', padding: '1.75rem' }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text)', marginBottom: '1.25rem' }}>
-                Todas as visitas
-              </h2>
-
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text)', opacity: 0.5 }}>
-                  Carregando...
-                </div>
-              ) : visitas.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2.5rem' }}>
-                  <div style={{
-                    width: '56px', height: '56px', borderRadius: '50%',
-                    backgroundColor: 'var(--background)', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', margin: '0 auto 1rem', color: 'var(--text)', opacity: 0.3
-                  }}>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="3" y="4" width="18" height="18" rx="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                  </div>
-                  <p style={{ color: 'var(--text)', opacity: 0.5, fontSize: '0.9rem' }}>Nenhuma visita ainda</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {visitas.map(visita => {
-                    const status = statusConfig[visita.status] || statusConfig.pendente
-                    return (
-                      <div key={visita._id} style={{
-                        backgroundColor: 'var(--background)', borderRadius: '12px',
-                        padding: '1rem 1.25rem', display: 'flex', alignItems: 'center',
-                        justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap'
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: '600', color: 'var(--text)', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
-                            {visita.responsavelId?.nome || 'Responsável'}
-                          </div>
-                          <div style={{ fontSize: '0.82rem', color: 'var(--text)', opacity: 0.6 }}>
-                            {visita.data ? new Date(visita.data).toLocaleDateString('pt-BR') : 'Data não definida'}
-                            {' · '}{visita.horario === 'manha' ? 'Manhã' : 'Tarde'}
-                          </div>
-                        </div>
-                        <div style={{
-                          backgroundColor: status.cor + '25', color: status.cor,
-                          padding: '0.3rem 0.85rem', borderRadius: '100px',
-                          fontSize: '0.8rem', fontWeight: '700'
+                        <span style={{
+                          backgroundColor: `${status.cor}25`,
+                          color: status.cor,
+                          padding: '0.35rem 0.8rem',
+                          borderRadius: '999px',
+                          fontSize: '0.78rem',
+                          fontWeight: '700'
                         }}>
                           {status.label}
-                        </div>
+                        </span>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+                      {candidatura.mensagem && (
+                        <p style={{ color: 'var(--text)', opacity: 0.72, fontSize: '0.86rem', margin: '1rem 0 0' }}>
+                          “{candidatura.mensagem}”
+                        </p>
+                      )}
+                      {(candidatura.status === 'pendente' || candidatura.status === 'em_analise') && (
+                        <div style={{ display: 'flex', gap: '0.6rem', marginTop: '1rem' }}>
+                          <button
+                            type="button"
+                            disabled={processandoId === candidatura._id}
+                            onClick={() => responderCandidatura(candidatura._id, 'recusada')}
+                            style={actionButton('#e87c7c')}
+                          >
+                            Recusar
+                          </button>
+                          <button
+                            type="button"
+                            disabled={processandoId === candidatura._id}
+                            onClick={() => responderCandidatura(candidatura._id, 'aceita')}
+                            style={actionButton('#7ab894')}
+                          >
+                            Aceitar
+                          </button>
+                        </div>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
         )}
 
-        {/* ABA CADASTRAR CASA */}
-        {aba === 'cadastrar' && (
-          <div style={{ backgroundColor: 'var(--secondary)', borderRadius: '20px', padding: '2rem' }}>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: '700', color: 'var(--text)', marginBottom: '0.3rem' }}>
-                Cadastrar nova casa
-              </h2>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text)', opacity: 0.55 }}>
-                O endereço será convertido automaticamente em coordenadas para o mapa
-              </p>
+        {aba === 'casa' && (
+          <section style={cardStyle}>
+            <div className="gestor-row" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '1.25rem'
+            }}>
+              <h2 style={{ fontSize: '1.05rem', color: 'var(--text)' }}>Minha casa</h2>
+              {!casa && (
+                <button type="button" onClick={() => setAba('cadastrar')} style={actionButton('#395f7f')}>
+                  Cadastrar casa
+                </button>
+              )}
             </div>
-
-            {sucesso && (
-              <div style={{
-                backgroundColor: '#7ab89420', border: '1.5px solid #7ab894',
-                borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem',
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                color: '#7ab894', fontWeight: '600', fontSize: '0.9rem'
+            {loading ? (
+              <EstadoVazio texto="Carregando casa..." />
+            ) : !casa ? (
+              <EstadoVazio texto="Você ainda não cadastrou uma casa." />
+            ) : (
+              <article style={{
+                backgroundColor: 'var(--background)',
+                borderRadius: '14px',
+                padding: '1.25rem'
               }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7ab894" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Casa cadastrada com sucesso! Já aparece no mapa.
-              </div>
+                <strong style={{ color: 'var(--text)', fontSize: '1rem' }}>{casa.nome}</strong>
+                <div style={{ color: 'var(--text)', opacity: 0.6, fontSize: '0.82rem', marginTop: '0.35rem' }}>
+                  {casa.endereco?.rua}, {casa.endereco?.numero} · {casa.endereco?.bairro}
+                </div>
+                <div style={{ color: 'var(--text)', opacity: 0.6, fontSize: '0.82rem', marginTop: '0.25rem' }}>
+                  Capacidade: {casa.capacidade} · Vagas atuais: {casa.vagasDisponiveis}
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'end', marginTop: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={labelStyle} htmlFor={`vagas-${casa._id}`}>Atualizar vagas</label>
+                    <input
+                      id={`vagas-${casa._id}`}
+                      type="number"
+                      min="0"
+                      max={casa.capacidade}
+                      value={vagasEdicao}
+                      onChange={event => setVagasEdicao(event.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={processandoId === casa._id}
+                    onClick={atualizarVagas}
+                    style={actionButton('#7ab894')}
+                  >
+                    Salvar
+                  </button>
+                </div>
+              </article>
             )}
+          </section>
+        )}
 
-            {erro && (
-              <div style={{
-                backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '12px',
-                padding: '1rem 1.25rem', marginBottom: '1.5rem', fontSize: '0.9rem', whiteSpace: 'pre-line'
+        {aba === 'cadastrar' && !casa && (
+          <section style={cardStyle}>
+            <h2 style={{ fontSize: '1.05rem', color: 'var(--text)', marginBottom: '0.35rem' }}>
+              Cadastrar nova casa
+            </h2>
+            <p style={{ color: 'var(--text)', opacity: 0.58, fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              O endereço será geocodificado pelo backend para aparecer no mapa.
+            </p>
+
+            <form onSubmit={cadastrarCasa}>
+              <div className="gestor-form-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: '1.1rem'
               }}>
-                {erro}
-              </div>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Nome da casa *</label>
-                <input type="text" name="nome" value={form.nome} onChange={handleChange}
-                  placeholder="Ex: Casa Raio de Sol" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Tipo de atendimento *</label>
-                <select name="tipo" value={form.tipo} onChange={handleChange}
-                  style={{ ...inputStyle, cursor: 'pointer' }}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'}>
-                  <option value="">Selecione...</option>
-                  {tiposOpcoes.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Telefone</label>
-                <input type="text" name="telefone" value={form.telefone} onChange={handleChange}
-                  placeholder="(83) 99999-9999" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Capacidade total *</label>
-                <input type="number" name="capacidade" value={form.capacidade} onChange={handleChange}
-                  placeholder="Ex: 20" min="1" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Vagas disponíveis</label>
-                <input type="number" name="vagasDisponiveis" value={form.vagasDisponiveis} onChange={handleChange}
-                  placeholder="Padrão: igual à capacidade" min="0" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>Descrição</label>
-                <textarea name="descricao" value={form.descricao} onChange={handleChange}
-                  placeholder="Descreva a casa, sua missão e diferenciais..." rows={3}
-                  style={{ ...inputStyle, resize: 'vertical' }}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.5rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--background)' }} />
-                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Endereço
-                  </span>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--background)' }} />
+                <div className="gestor-full">
+                  <label style={labelStyle} htmlFor="nome-casa">Nome da casa *</label>
+                  <input id="nome-casa" name="nome" value={form.nome} onChange={handleChange} style={inputStyle} />
                 </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>
-                  CEP *
-                  {buscandoCep && <span style={{ marginLeft: '0.5rem', opacity: 0.5, fontWeight: '400' }}>Buscando...</span>}
-                </label>
-                <input type="text" name="endereco.cep" value={form.endereco.cep} onChange={handleChange}
-                  placeholder="58000-000" maxLength={9} style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Rua *</label>
-                <input type="text" name="endereco.rua" value={form.endereco.rua} onChange={handleChange}
-                  placeholder="Preenchido automaticamente pelo CEP" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Número</label>
-                <input type="text" name="endereco.numero" value={form.endereco.numero} onChange={handleChange}
-                  placeholder="Ex: 123" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Bairro</label>
-                <input type="text" name="endereco.bairro" value={form.endereco.bairro} onChange={handleChange}
-                  placeholder="Preenchido automaticamente pelo CEP" style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Cidade</label>
-                <input type="text" name="endereco.cidade" value={form.endereco.cidade} onChange={handleChange}
-                  style={inputStyle}
-                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                  onBlur={e => e.target.style.border = '2px solid transparent'} />
-              </div>
-
-              <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.5rem 0 1rem' }}>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--background)' }} />
-                  <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Serviços oferecidos
-                  </span>
-                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--background)' }} />
+                <div>
+                  <label style={labelStyle} htmlFor="tipo-casa">Tipo de atendimento *</label>
+                  <select id="tipo-casa" name="tipo" value={form.tipo} onChange={handleChange} style={inputStyle}>
+                    <option value="">Selecione...</option>
+                    {tiposOpcoes.map(tipo => (
+                      <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                    ))}
+                  </select>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {servicosOpcoes.map(s => (
-                    <button key={s.value} onClick={() => toggleServico(s.value)} style={{
-                      padding: '0.4rem 0.9rem', borderRadius: '100px', border: '2px solid',
-                      borderColor: form.servicos.includes(s.value) ? 'var(--primary)' : 'transparent',
-                      backgroundColor: form.servicos.includes(s.value) ? 'var(--primary)' : 'var(--background)',
-                      color: form.servicos.includes(s.value) ? 'var(--text-light)' : 'var(--text)', fontSize: '0.82rem', fontWeight: '500',
-                      cursor: 'pointer', transition: 'all 0.2s'
-                    }}>
-                      {s.label}
-                    </button>
-                  ))}
+                <div>
+                  <label style={labelStyle} htmlFor="telefone-casa">Telefone</label>
+                  <input id="telefone-casa" name="telefone" value={form.telefone} onChange={handleChange} style={inputStyle} />
                 </div>
-              </div>
-
-              <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                <button onClick={handleSubmit} disabled={salvando} style={{
-                  width: '100%', backgroundColor: 'var(--primary)', color: 'white',
-                  border: 'none', padding: '1rem', borderRadius: '12px',
-                  fontSize: '1rem', fontWeight: '700', cursor: salvando ? 'not-allowed' : 'pointer',
-                  opacity: salvando ? 0.7 : 1, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', gap: '0.5rem', transition: 'opacity 0.2s'
-                }}>
-                  {salvando ? (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                        style={{ animation: 'spin 1s linear infinite' }}>
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                      </svg>
-                      Cadastrando...
-                    </>
-                  ) : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                      </svg>
-                      Cadastrar casa
-                    </>
-                  )}
+                <div>
+                  <label style={labelStyle} htmlFor="capacidade-casa">Capacidade *</label>
+                  <input id="capacidade-casa" type="number" min="1" name="capacidade" value={form.capacidade} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="vagas-casa">Vagas disponíveis</label>
+                  <input id="vagas-casa" type="number" min="0" name="vagasDisponiveis" value={form.vagasDisponiveis} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div className="gestor-full">
+                  <label style={labelStyle} htmlFor="descricao-casa">Descrição *</label>
+                  <textarea id="descricao-casa" name="descricao" rows="4" value={form.descricao} onChange={handleChange} style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="cep-casa">
+                    CEP * {buscandoCep && <span style={{ fontWeight: '400' }}>· buscando...</span>}
+                  </label>
+                  <input id="cep-casa" name="endereco.cep" maxLength="9" value={form.endereco.cep} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="rua-casa">Rua *</label>
+                  <input id="rua-casa" name="endereco.rua" value={form.endereco.rua} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="numero-casa">Número *</label>
+                  <input id="numero-casa" name="endereco.numero" value={form.endereco.numero} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="bairro-casa">Bairro *</label>
+                  <input id="bairro-casa" name="endereco.bairro" value={form.endereco.bairro} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="cidade-casa">Cidade *</label>
+                  <input id="cidade-casa" name="endereco.cidade" value={form.endereco.cidade} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="estado-casa">Estado *</label>
+                  <input id="estado-casa" name="endereco.estado" maxLength="2" value={form.endereco.estado} onChange={handleChange} style={inputStyle} />
+                </div>
+                <div className="gestor-full">
+                  <span style={labelStyle}>Serviços oferecidos</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {servicosOpcoes.map(servico => {
+                      const selecionado = form.servicos.includes(servico.value)
+                      return (
+                        <button
+                          type="button"
+                          key={servico.value}
+                          onClick={() => toggleServico(servico.value)}
+                          style={{
+                            padding: '0.42rem 0.85rem',
+                            borderRadius: '999px',
+                            border: `1px solid ${selecionado ? 'var(--primary)' : 'transparent'}`,
+                            backgroundColor: selecionado ? 'var(--primary)' : 'var(--background)',
+                            color: selecionado ? 'white' : 'var(--text)',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          {servico.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <button
+                  className="gestor-full"
+                  type="submit"
+                  disabled={salvando}
+                  style={{
+                    width: '100%',
+                    backgroundColor: 'var(--primary)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.95rem',
+                    borderRadius: '11px',
+                    fontWeight: '800',
+                    cursor: salvando ? 'not-allowed' : 'pointer',
+                    opacity: salvando ? 0.7 : 1
+                  }}
+                >
+                  {salvando ? 'Salvando no banco...' : 'Cadastrar casa'}
                 </button>
               </div>
-            </div>
-          </div>
+            </form>
+          </section>
         )}
       </div>
 
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        .gestor-full { grid-column: 1 / -1; }
+        @media (max-width: 800px) {
+          .gestor-page { padding: 1rem !important; }
+          .gestor-header, .gestor-row { align-items: stretch !important; flex-direction: column; }
+          .gestor-tabs {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .gestor-tabs button { width: 100%; }
+          .gestor-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .gestor-onboarding-steps { grid-template-columns: 1fr !important; }
+          .gestor-house-grid, .gestor-form-grid { grid-template-columns: 1fr !important; }
+          .gestor-form-grid > * { grid-column: 1 !important; }
         }
       `}</style>
-    </div>
+    </main>
   )
 }

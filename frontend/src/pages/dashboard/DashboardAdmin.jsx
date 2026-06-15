@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 import { getApiError } from '../../services/errors'
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
+  const adminDemo = usuario?.email?.toLowerCase() === 'admin.demo@cuidarmais.com'
   const [aba, setAba] = useState('visao')
   const [convites, setConvites] = useState([])
   const [stats, setStats] = useState({ usuarios: 0, gestores: 0, casas: 0, visitas: 0 })
@@ -14,14 +15,19 @@ export default function DashboardAdmin() {
   const [toastMsg, setToastMsg] = useState('')
   const [toastTipo, setToastTipo] = useState('sucesso')
   const [confirmandoId, setConfirmandoId] = useState(null)
+  const toastTimeoutRef = useRef(null)
 
-  const toast = (msg, tipo = 'sucesso') => {
+  const toast = (msg, tipo = 'sucesso', duracao = 4000) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
     setToastMsg(msg)
     setToastTipo(tipo)
-    setTimeout(() => setToastMsg(''), 4000)
+    toastTimeoutRef.current = setTimeout(() => setToastMsg(''), duracao)
   }
 
   useEffect(() => { carregarDados() }, [])
+  useEffect(() => () => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+  }, [])
 
   const carregarDados = async () => {
     setLoading(true)
@@ -40,18 +46,28 @@ export default function DashboardAdmin() {
   }
 
   const gerarConvite = async () => {
-    if (!emailConvite || !emailConvite.includes('@')) {
+    if (enviando || adminDemo) return
+
+    const email = emailConvite.trim().toLowerCase()
+    if (!email || !email.includes('@')) {
       toast('Digite um email válido', 'erro')
       return
     }
+
     setEnviando(true)
     try {
-      const { data } = await api.post('/admin/convite', { email: emailConvite })
-      toast(data.emailEnviado === false
-        ? `Convite gerado. Codigo: ${data.codigo}`
-        : `Convite enviado para ${emailConvite}!`)
+      const { data } = await api.post('/admin/convite', { email })
+      if (data.emailEnviado === false) {
+        toast(
+          `Convite criado, mas o email nao foi enviado.\nCodigo: ${data.codigo}\n${data.emailErro || 'Verifique a configuracao SMTP.'}`,
+          'erro',
+          10000
+        )
+      } else {
+        toast(`Convite enviado para ${email}!\nCodigo: ${data.codigo}`, 'sucesso', 7000)
+      }
       setEmailConvite('')
-      carregarDados()
+      await carregarDados()
     } catch (err) {
       toast(getApiError(err, 'Erro ao enviar convite'), 'erro')
     } finally {
@@ -60,6 +76,8 @@ export default function DashboardAdmin() {
   }
 
   const deletarConvite = async (id) => {
+    if (adminDemo) return
+
     try {
       await api.delete(`/admin/convite/${id}`)
       toast('Convite removido!')
@@ -93,14 +111,16 @@ export default function DashboardAdmin() {
   }
 
   const BotaoEnviar = () => (
-    <button onClick={gerarConvite} disabled={enviando} style={{
+    <button onClick={gerarConvite} disabled={enviando || adminDemo} style={{
       backgroundColor: 'var(--primary)', color: 'white', border: 'none',
       padding: '0.75rem 1.5rem', borderRadius: '10px', fontSize: '0.9rem',
-      fontWeight: '700', cursor: enviando ? 'not-allowed' : 'pointer',
-      opacity: enviando ? 0.7 : 1, whiteSpace: 'nowrap',
+      fontWeight: '700', cursor: enviando || adminDemo ? 'not-allowed' : 'pointer',
+      opacity: enviando || adminDemo ? 0.6 : 1, whiteSpace: 'nowrap',
       display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'opacity 0.2s'
     }}>
-      {enviando ? (
+      {adminDemo ? (
+        'Somente leitura'
+      ) : enviando ? (
         <>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
             style={{ animation: 'spin 1s linear infinite' }}>
@@ -167,7 +187,7 @@ export default function DashboardAdmin() {
           }}>
             {st.label}
           </div>
-          {confirmandoId === c._id ? (
+          {!adminDemo && (confirmandoId === c._id ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text)', opacity: 0.7 }}>Remover?</span>
               <button onClick={() => deletarConvite(c._id)} style={{
@@ -202,7 +222,7 @@ export default function DashboardAdmin() {
                 <path d="M9 6V4h6v2"/>
               </svg>
             </button>
-          )}
+          ))}
         </div>
       </div>
     )
@@ -277,6 +297,20 @@ export default function DashboardAdmin() {
           </div>
         </div>
 
+        {adminDemo && (
+          <div style={{
+            backgroundColor: '#e8a87c20',
+            border: '1px solid #e8a87c55',
+            color: 'var(--text)',
+            padding: '0.9rem 1rem',
+            borderRadius: '12px',
+            marginBottom: '1.5rem',
+            fontSize: '0.88rem'
+          }}>
+            Conta de demonstracao: estatisticas e convites podem ser consultados, mas alteracoes estao bloqueadas.
+          </div>
+        )}
+
         {/* ABA VISÃO GERAL */}
         {aba === 'visao' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -319,7 +353,7 @@ export default function DashboardAdmin() {
               </p>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <div style={{ flex: 1 }}>
-                  <input type="email" value={emailConvite} onChange={e => setEmailConvite(e.target.value)}
+                  <input type="email" value={emailConvite} disabled={adminDemo} onChange={e => setEmailConvite(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && gerarConvite()}
                     placeholder="email@gestor.com" style={s.input}
                     onFocus={e => e.target.style.border = '2px solid var(--primary)'}
@@ -358,7 +392,7 @@ export default function DashboardAdmin() {
               </p>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <div style={{ flex: 1 }}>
-                  <input type="email" value={emailConvite} onChange={e => setEmailConvite(e.target.value)}
+                  <input type="email" value={emailConvite} disabled={adminDemo} onChange={e => setEmailConvite(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && gerarConvite()}
                     placeholder="email@gestor.com" style={s.input}
                     onFocus={e => e.target.style.border = '2px solid var(--primary)'}

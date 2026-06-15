@@ -9,7 +9,4 @@ router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
 router.get('/perfil', authMiddleware, authController.perfil);
 
-// TEMPORÁRIO - remover antes de produção
-router.post('/register-dev', authController.registerDev);
-
 module.exports = router;

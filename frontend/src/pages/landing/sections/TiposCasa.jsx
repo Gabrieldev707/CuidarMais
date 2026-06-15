@@ -52,15 +52,15 @@ const categorias = [
 
 export default function TiposCasas() {
   return (
-    <section id="tipos" style={{
+    <section id="tipos" className="landing-section" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--background)'
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="landing-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 style={{
+          <h2 className="section-heading" style={{
             fontSize: '2.5rem',
             fontWeight: '800',
             color: 'var(--text)',
@@ -78,7 +78,7 @@ export default function TiposCasas() {
         </div>
 
         {/* GRID */}
-        <div style={{
+        <div className="categorias-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '2rem'

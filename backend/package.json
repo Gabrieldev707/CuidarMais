@@ -1,24 +1,30 @@
 {
     "name": "backend",
     "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
+    "description": "API REST e GraphQL do CuidarMais",
+    "main": "server.js",
     "scripts": {
         "dev": "nodemon server.js",
-        "start": "node server.js"
+        "start": "node server.js",
+        "seed:demo": "node scripts/seed-demo.js",
+        "sync:indexes": "node scripts/sync-indexes.js",
+        "check": "node --check server.js && node --check src/app.js && node --check scripts/seed-demo.js && node --check scripts/sync-indexes.js"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "type": "commonjs",
+    "engines": {
+        "node": ">=20.19 <25"
+    },
     "dependencies": {
-        "@apollo/server": "^5.4.0",
+        "@apollo/server": "^5.5.1",
         "@as-integrations/express4": "^1.1.2",
         "bcryptjs": "^3.0.3",
         "cloudinary": "^2.9.0",
         "cors": "^2.8.6",
         "dotenv": "^17.3.1",
-        "express": "^4.18.2",
+        "express": "^4.22.2",
         "express-validator": "^7.3.1",
         "graphql": "^16.13.1",
         "graphql-tag": "^2.12.6",
@@ -26,7 +32,7 @@
         "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.2.4",
         "multer": "^2.1.1",
-        "nodemailer": "^8.0.1",
+        "nodemailer": "^9.0.0",
         "zod": "^4.3.6"
     },
     "devDependencies": {

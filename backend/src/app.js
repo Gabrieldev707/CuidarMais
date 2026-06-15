@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const mongoose = require('mongoose');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express4');
 const jwt = require('jsonwebtoken');
@@ -14,45 +15,68 @@ const assistidoRoutes = require('./routes/assistido.routes');
 const candidaturaRoutes = require('./routes/candidatura.routes');
 const adminRoutes = require('./routes/admin.routes');
 
-// Origens permitidas: localhost (dev) + FRONTEND_URL (prod) + qualquer deploy *.vercel.app
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-];
-if (process.env.FRONTEND_URL) {
-    allowedOrigins.push(process.env.FRONTEND_URL);
-}
+const criarCorsOptions = () => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const allowedOrigins = new Set(
+        (process.env.FRONTEND_URL || '')
+            .split(',')
+            .map(origin => origin.trim().replace(/\/+$/, ''))
+            .filter(Boolean)
+    );
 
-const corsOptions = {
-    origin(origin, callback) {
-        // requests sem origin (curl, health checks, mobile) são permitidos
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || /\.vercel\.app$/.test(new URL(origin).hostname)) {
-            return callback(null, true);
-        }
-        return callback(new Error(`Origin não permitida pelo CORS: ${origin}`));
-    },
-    credentials: true,
+    if (!isProduction) {
+        allowedOrigins.add('http://localhost:5173');
+        allowedOrigins.add('http://localhost:5174');
+        allowedOrigins.add('http://localhost:5175');
+    }
+
+    return {
+        origin(origin, callback) {
+            // Requisicoes sem Origin incluem healthchecks e clientes de API.
+            if (!origin) return callback(null, true);
+
+            const originNormalizada = origin.replace(/\/+$/, '');
+            if (allowedOrigins.has(originNormalizada)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error(`Origin nao permitida pelo CORS: ${origin}`));
+        },
+        credentials: true
+    };
 };
 
 async function createApp() {
     const app = express();
+    const isProduction = process.env.NODE_ENV === 'production';
+    const corsOptions = criarCorsOptions();
 
-    // Apollo Server precisa ser iniciado antes de ser usado como middleware
-    const apolloServer = new ApolloServer({ typeDefs, resolvers });
+    const apolloServer = new ApolloServer({
+        typeDefs,
+        resolvers,
+        introspection: !isProduction
+    });
     await apolloServer.start();
 
-    app.use(helmet({ contentSecurityPolicy: false })); // CSP desativado para o Apollo Sandbox funcionar
+    app.disable('x-powered-by');
+    app.use(isProduction ? helmet() : helmet({ contentSecurityPolicy: false }));
     app.use(cors(corsOptions));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json({ limit: '1mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
     app.get('/', (req, res) => {
         res.json({ message: 'CuidarMais API rodando!' });
     });
 
-    // Rotas REST
+    app.get('/health', (req, res) => {
+        const bancoConectado = mongoose.connection.readyState === 1;
+        res.status(bancoConectado ? 200 : 503).json({
+            status: bancoConectado ? 'ok' : 'degraded',
+            database: bancoConectado ? 'connected' : 'disconnected',
+            uptime: Math.round(process.uptime())
+        });
+    });
+
     app.use('/api/auth', authRoutes);
     app.use('/api/casas', casaRoutes);
     app.use('/api/visitas', visitaRoutes);
@@ -60,7 +84,6 @@ async function createApp() {
     app.use('/api/candidaturas', candidaturaRoutes);
     app.use('/api/admin', adminRoutes);
 
-    // Endpoint GraphQL — lê o token JWT do header e injeta o usuário no context
     app.use(
         '/graphql',
         cors(corsOptions),
@@ -73,13 +96,24 @@ async function createApp() {
                         const usuario = jwt.verify(token, process.env.JWT_SECRET);
                         return { usuario };
                     } catch {
-                        // token inválido — contexto sem usuário (queries públicas continuam funcionando)
+                        // Queries publicas continuam disponiveis sem usuario autenticado.
                     }
                 }
                 return { usuario: null };
             },
         })
     );
+
+    app.use((error, req, res, next) => {
+        if (!error) return next();
+
+        if (error.message?.startsWith('Origin nao permitida')) {
+            return res.status(403).json({ message: error.message });
+        }
+
+        console.error('Erro nao tratado:', error);
+        return res.status(500).json({ message: 'Erro interno do servidor' });
+    });
 
     return app;
 }

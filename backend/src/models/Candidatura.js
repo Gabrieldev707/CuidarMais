@@ -26,4 +26,9 @@ const candidaturaSchema = new mongoose.Schema({
     dataResposta: { type: Date }
 }, { timestamps: true });
 
+candidaturaSchema.index(
+    { assistidoId: 1, casaId: 1 },
+    { unique: true, name: 'assistido_casa_unique' }
+);
+
 module.exports = mongoose.model('Candidatura', candidaturaSchema);

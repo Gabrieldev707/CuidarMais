@@ -2,16 +2,16 @@ import { Link } from 'react-router-dom'
 
 export default function CTA() {
   return (
-    <section style={{
+    <section className="landing-section" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--background)' // branco
     }}>
-      <div style={{
+      <div className="landing-container cta-container" style={{
         maxWidth: '700px',
         margin: '0 auto',
         textAlign: 'center'
       }}>
-        <h2 style={{
+        <h2 className="cta-heading" style={{
           fontSize: '2.8rem',
           fontWeight: '800',
           color: 'var(--text)', // 🔥 destaque
@@ -32,7 +32,7 @@ export default function CTA() {
           Cadastre-se gratuitamente e encontre a casa de apoio ideal para o seu familiar em Campina Grande.
         </p>
 
-        <div style={{
+        <div className="cta-actions" style={{
           display: 'flex',
           gap: '1rem',
           justifyContent: 'center',

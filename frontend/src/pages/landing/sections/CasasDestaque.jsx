@@ -33,13 +33,13 @@ const casas = [
 
 export default function CasasDestaque() {
   return (
-    <section id="casas" style={{
+    <section id="casas" className="landing-section" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--background)'
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="landing-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
-        <div style={{
+        <div className="casas-header" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
@@ -61,7 +61,7 @@ export default function CasasDestaque() {
               Em destaque
             </div>
             <a href="/casas#casas" style={{ color: 'inherit', textDecoration: 'none' }}>
-              <h2 style={{
+              <h2 className="section-heading" style={{
                 fontSize: '2.5rem',
                 fontWeight: '800',
                 color: 'var(--text)',

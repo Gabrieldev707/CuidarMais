@@ -37,6 +37,12 @@ exports.enviarCandidatura = async(req, res) => {
 
         res.status(201).json({ message: 'Candidatura enviada com sucesso', candidatura })
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({
+                message: 'Este assistido já possui uma candidatura para esta casa'
+            })
+        }
+
         res.status(500).json({ message: 'Erro no servidor', error: error.message })
     }
 }
@@ -47,6 +53,27 @@ exports.minhasCandidaturas = async(req, res) => {
             .populate('casaId', 'nome endereco tipo avaliacaoMedia')
             .populate('assistidoId', 'nome perfil')
             .sort({ createdAt: -1 })
+        res.json({ candidaturas })
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no servidor', error: error.message })
+    }
+}
+
+exports.candidaturasDoGestor = async(req, res) => {
+    try {
+        const casas = await Casa.find({
+            gestorId: req.usuario.id,
+            ativo: true
+        }).select('_id')
+
+        const candidaturas = await Candidatura.find({
+            casaId: { $in: casas.map(casa => casa._id) }
+        })
+            .populate('casaId', 'nome endereco tipo')
+            .populate('assistidoId', 'nome perfil dependencia condicoes observacoes contatoEmergencia dataNascimento')
+            .populate('responsavelId', 'nome telefone email')
+            .sort({ createdAt: -1 })
+
         res.json({ candidaturas })
     } catch (error) {
         res.status(500).json({ message: 'Erro no servidor', error: error.message })
@@ -81,6 +108,16 @@ exports.responderCandidatura = async(req, res) => {
 // Para o gestor listar candidaturas das suas casas
 exports.candidaturasDaCasa = async(req, res) => {
     try {
+        const casa = await Casa.findOne({
+            _id: req.params.casaId,
+            gestorId: req.usuario.id,
+            ativo: true
+        })
+
+        if (!casa) {
+            return res.status(404).json({ message: 'Casa nao encontrada para este gestor' })
+        }
+
         const candidaturas = await Candidatura.find({ casaId: req.params.casaId })
             .populate('assistidoId', 'nome perfil dependencia condicoes observacoes contatoEmergencia dataNascimento')
             .populate('responsavelId', 'nome telefone email')

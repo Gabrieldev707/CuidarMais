@@ -6,7 +6,7 @@ import IconDecor from '../../../assets/help.svg'
 
 export default function HeroApresentacao() {
   return (
-    <section id="sobre" style={{
+    <section id="sobre" className="hero-apresentacao-section" style={{
       background: 'linear-gradient(135deg, #0C326F 0%, #11479D 79%, #165CCB 100%)',
       position: 'relative',
       overflow: 'hidden',
@@ -14,7 +14,7 @@ export default function HeroApresentacao() {
     }}>
 
       {/* TEXTO GIGANTE FUNDO */}
-      <div style={{
+      <div className="landing-container hero-apresentacao-grid" style={{
         position: 'absolute',
         top: '-10%',
         left: '5%',
@@ -68,7 +68,7 @@ export default function HeroApresentacao() {
         }}>
 
           {/* IMAGENS SUPERIORES */}
-          <div style={{
+          <div className="hero-apresentacao-images" style={{
             display: 'flex',
             gap: '1rem',
             width: '100%',
@@ -101,7 +101,7 @@ export default function HeroApresentacao() {
           </div>
 
           {/* LOGO + TÍTULO */}
-          <div style={{
+          <div className="brand-lockup" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -131,7 +131,7 @@ export default function HeroApresentacao() {
       </div>
 
       {/* DECORATIVO */}
-      <div style={{
+      <div className="hero-decor" style={{
         position: 'absolute',
         bottom: '0px',
         right: '0px',

@@ -7,6 +7,7 @@ const validate = require('../middlewares/validate');
 const { criarCasaSchema, atualizarCasaSchema, atualizarVagasSchema } = require('../validators/casa.validators');
 
 router.get('/', casaController.listarCasas);
+router.get('/minhas', auth, checkRole('gestor'), casaController.minhasCasas);
 router.get('/:id', casaController.buscarCasa);
 router.post('/', auth, checkRole('gestor', 'admin'), validate(criarCasaSchema), casaController.criarCasa);
 router.put('/:id', auth, checkRole('gestor', 'admin'), validate(atualizarCasaSchema), casaController.atualizarCasa);

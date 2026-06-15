@@ -8,7 +8,7 @@ import Logo from '../../../assets/logo.svg'
 
 export default function Hero() {
   return (
-    <section style={{
+    <section className="landing-section hero-section" style={{
       display: 'flex',
       alignItems: 'center',
       backgroundColor: 'var(--background)',
@@ -18,7 +18,7 @@ export default function Hero() {
     }}>
 
       {/* FUNDO */}
-      <div style={{
+      <div className="landing-container hero-grid" style={{
         position: 'absolute',
         bottom: '-150px',
         left: '-80px',
@@ -62,7 +62,7 @@ export default function Hero() {
             oferecendo cuidado para idosos, pessoas em reabilitação e quem precisa de apoio.
           </p>
 
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <div className="hero-actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <a href="/buscar-casas#mapa" style={{
               backgroundColor: 'var(--primary)',
               color: 'white',
@@ -87,7 +87,7 @@ export default function Hero() {
           </div>
 
           {/* STATS */}
-          <div style={{
+          <div className="hero-stats" style={{
             display: 'flex',
             gap: '2rem',
             marginTop: '2.5rem',
@@ -118,7 +118,7 @@ export default function Hero() {
         </div>
 
         {/* IMAGENS */}
-        <div style={{
+        <div className="hero-media-grid" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '1rem',

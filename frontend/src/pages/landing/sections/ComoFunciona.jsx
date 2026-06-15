@@ -47,11 +47,11 @@ export default function ComoFunciona() {
   ]
 
   return (
-    <section id="como-funciona" style={{
+    <section id="como-funciona" className="landing-section" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--primary-dark)'
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="landing-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
@@ -68,7 +68,7 @@ export default function ComoFunciona() {
           }}>
             Simples e rápido
           </div>
-          <h2 style={{
+          <h2 className="section-heading" style={{
             fontSize: '2.5rem',
             fontWeight: '800',
             color: 'var(--text-light)',

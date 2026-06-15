@@ -133,12 +133,25 @@ export default function MapaPreview() {
     mapInstanceRef.current = map
   }, [])
 
+  useEffect(() => {
+    const ajustarMapa = () => {
+      window.setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize()
+      }, 120)
+    }
+
+    ajustarMapa()
+    window.addEventListener('resize', ajustarMapa)
+
+    return () => window.removeEventListener('resize', ajustarMapa)
+  }, [casaSelecionada])
+
   return (
-    <section id="mapa" style={{
+    <section id="mapa" className="landing-section" style={{
       padding: '6rem 2rem',
       backgroundColor: 'var(--secondary)',
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="landing-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -154,7 +167,7 @@ export default function MapaPreview() {
           }}>
             Explore sua cidade
           </div>
-          <h2 style={{
+          <h2 className="section-heading" style={{
             fontSize: '2.5rem',
             fontWeight: '800',
             color: 'var(--text)',
@@ -178,7 +191,7 @@ export default function MapaPreview() {
         <div className={`mapa-layout ${casaSelecionada ? 'com-card' : 'sem-card'}`}>
 
           {/* Mapa */}
-          <div style={{
+          <div className="map-frame" style={{
             borderRadius: '20px',
             overflow: 'hidden',
             boxShadow: '0 10px 40px rgba(0,0,0,0.1)',

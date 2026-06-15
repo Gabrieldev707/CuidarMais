@@ -8,5 +8,5 @@ export const getApiError = (err, fallback = 'Erro inesperado') => {
       .join('\n')
   }
 
-  return data?.message || data?.erro || fallback
+  return data?.message || data?.erro || err.message || fallback
 }

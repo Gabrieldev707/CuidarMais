@@ -39,6 +39,16 @@ const assistidoSchema = new mongoose.Schema({
     },
     foto: { type: String, default: null },
     ativo: { type: Boolean, default: true }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+assistidoSchema.virtual('candidaturas', {
+    ref: 'Candidatura',
+    localField: '_id',
+    foreignField: 'assistidoId'
+});
 
 module.exports = mongoose.model('Assistido', assistidoSchema);

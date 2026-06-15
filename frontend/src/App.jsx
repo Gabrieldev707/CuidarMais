@@ -7,13 +7,15 @@ import LandingPage from './pages/landing/LandingPage'
 import Login from './pages/auth/Login'
 import Cadastro from './pages/auth/Cadastro'
 import Dashboard from './pages/dashboard/Dashboard'
-import DashboardAdmin from './pages/dashboard/DashboardAdmin'
 
 function ScrollToHash() {
   const { pathname, hash } = useLocation()
 
   useEffect(() => {
-    if (!hash) return
+    if (!hash) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      return
+    }
 
     const id = decodeURIComponent(hash.replace('#', ''))
 
@@ -43,7 +45,6 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/admin" element={<DashboardAdmin />} />
             </Routes>
           </div>
         </BrowserRouter>

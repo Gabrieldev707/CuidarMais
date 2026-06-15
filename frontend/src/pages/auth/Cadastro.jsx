@@ -28,7 +28,10 @@ export default function Cadastro() {
     try {
       const { data } = await api.post('/auth/register', form)
       login(data.usuario, data.token)
-      navigate('/dashboard')
+      navigate('/dashboard', {
+        replace: true,
+        state: { onboardingGestor: data.usuario.role === 'gestor' }
+      })
     } catch (err) {
       setErro(getApiError(err, 'Erro ao criar conta'))
     } finally {
@@ -59,7 +62,7 @@ export default function Cadastro() {
   }
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '100vh',
       backgroundColor: 'var(--background)',
       display: 'flex',
@@ -67,7 +70,7 @@ export default function Cadastro() {
       justifyContent: 'center',
       padding: '2rem'
     }}>
-      <div style={{ width: '100%', maxWidth: '440px' }}>
+      <div className="auth-shell" style={{ width: '100%', maxWidth: '440px' }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
@@ -96,7 +99,7 @@ export default function Cadastro() {
           </p>
         </div>
 
-        <div style={{
+        <div className="auth-card" style={{
           backgroundColor: 'var(--secondary)',
           borderRadius: '20px',
           padding: '2.5rem'
@@ -119,7 +122,7 @@ export default function Cadastro() {
           {/* Tipo de conta */}
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={labelStyle}>Tipo de conta</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className="auth-role-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               {[
                 {
                   value: 'familia',
@@ -237,53 +240,71 @@ export default function Cadastro() {
 
           {/* Código de convite — só aparece para gestor */}
           {form.role === 'gestor' && (
-            <div style={{ marginBottom: '1.75rem' }}>
-              <label style={labelStyle}>
-                Código de convite
-                <span style={{
-                  marginLeft: '0.4rem',
-                  fontSize: '0.78rem',
-                  fontWeight: '400',
-                  opacity: 0.6
-                }}>
-                  (enviado por email pelo administrador)
-                </span>
-              </label>
-              <input
-                type="text"
-                name="codigoConvite"
-                value={form.codigoConvite}
-                onChange={handleChange}
-                placeholder="Ex: A1B2C3D4"
-                maxLength={8}
-                style={{
-                  ...inputStyle,
-                  letterSpacing: '4px',
-                  fontWeight: '700',
-                  fontSize: '1.1rem',
-                  textTransform: 'uppercase',
-                  textAlign: 'center'
-                }}
-                onFocus={e => e.target.style.border = '2px solid var(--primary)'}
-                onBlur={e => e.target.style.border = '2px solid transparent'}
-              />
+            <>
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                marginTop: '0.5rem',
-                fontSize: '0.8rem',
-                color: 'var(--text)',
-                opacity: 0.55
+                backgroundColor: 'var(--background)',
+                borderRadius: '12px',
+                padding: '1rem',
+                marginBottom: '1.25rem',
+                color: 'var(--text)'
               }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Solicite o código ao administrador da plataforma
+                <div style={{ fontWeight: '700', fontSize: '0.9rem', marginBottom: '0.65rem' }}>
+                  Cadastro do gestor em duas etapas
+                </div>
+                <div style={{ display: 'grid', gap: '0.45rem', fontSize: '0.82rem', opacity: 0.72 }}>
+                  <div><strong>1.</strong> Crie sua conta usando o convite.</div>
+                  <div><strong>2.</strong> Cadastre a casa que você administra no painel.</div>
+                </div>
               </div>
-            </div>
+
+              <div style={{ marginBottom: '1.75rem' }}>
+                <label style={labelStyle}>
+                  Código de convite
+                  <span style={{
+                    marginLeft: '0.4rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '400',
+                    opacity: 0.6
+                  }}>
+                    (enviado por email pelo administrador)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="codigoConvite"
+                  value={form.codigoConvite}
+                  onChange={handleChange}
+                  placeholder="Ex: A1B2C3D4"
+                  maxLength={8}
+                  style={{
+                    ...inputStyle,
+                    letterSpacing: '4px',
+                    fontWeight: '700',
+                    fontSize: '1.1rem',
+                    textTransform: 'uppercase',
+                    textAlign: 'center'
+                  }}
+                  onFocus={e => e.target.style.border = '2px solid var(--primary)'}
+                  onBlur={e => e.target.style.border = '2px solid transparent'}
+                />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  marginTop: '0.5rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--text)',
+                  opacity: 0.55
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  O email deve ser o mesmo que recebeu o convite
+                </div>
+              </div>
+            </>
           )}
 
           <button
@@ -303,7 +324,11 @@ export default function Cadastro() {
               transition: 'opacity 0.2s'
             }}
           >
-            {loading ? 'Criando conta...' : 'Criar conta'}
+            {loading
+              ? 'Criando conta...'
+              : form.role === 'gestor'
+                ? 'Criar conta e cadastrar minha casa'
+                : 'Criar conta'}
           </button>
 
           <p style={{

@@ -20,7 +20,10 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/login', form)
       login(data.usuario, data.token)
-      navigate('/dashboard')
+      navigate('/dashboard', {
+        replace: true,
+        state: { verificarCasaGestor: data.usuario.role === 'gestor' }
+      })
     } catch (err) {
       setErro(err.response?.data?.message || 'Erro ao fazer login')
     } finally {
@@ -29,7 +32,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{
+    <div className="auth-page" style={{
       minHeight: '80vh',
       backgroundColor: 'var(--background)',
       display: 'flex',
@@ -37,7 +40,7 @@ export default function Login() {
       justifyContent: 'center',
       padding: '2rem'
     }}>
-      <div style={{
+      <div className="auth-shell" style={{
         width: '100%',
         maxWidth: '440px'
       }}>
@@ -70,7 +73,7 @@ export default function Login() {
         </div>
 
         {/* Card */}
-        <div style={{
+        <div className="auth-card" style={{
           backgroundColor: 'var(--secondary)',
           borderRadius: '20px',
           padding: '2.5rem'

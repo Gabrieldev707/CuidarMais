@@ -105,32 +105,3 @@ exports.perfil = async(req, res) => {
         res.status(500).json({ message: 'Erro no servidor', error: error.message });
     }
 };
-
-// TEMPORÁRIO - só para desenvolvimento, remover antes de produção
-exports.registerDev = async(req, res) => {
-    try {
-        const { nome, senha, telefone, role } = req.body;
-        const email = normalizarEmail(req.body.email);
-
-        const usuarioExiste = await User.findOne({ email });
-        if (usuarioExiste) {
-            return res.status(400).json({ message: 'Email já cadastrado' });
-        }
-
-        const usuario = await User.create({ nome, email, senha, telefone, role: role || 'familia' });
-        const token = gerarToken(usuario._id, usuario.role);
-
-        res.status(201).json({
-            message: 'Usuário criado com sucesso',
-            token,
-            usuario: {
-                id: usuario._id,
-                nome: usuario.nome,
-                email: usuario.email,
-                role: usuario.role
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erro no servidor', error: error.message });
-    }
-};
