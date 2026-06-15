@@ -30,13 +30,13 @@
 
 ### Credenciais de demonstração
 
-As contas abaixo usam a senha `CuidarMais@2026`:
+Use estas contas na [tela de login](https://cuidarmais.vercel.app/login):
 
-| Perfil | Email | Estado inicial |
-|---|---|---|
-| Família | `familia.demo@cuidarmais.com` | Possui um assistido fictício |
-| Gestor | `gestor.demo@cuidarmais.com` | Possui uma casa fictícia |
-| Admin | `admin.demo@cuidarmais.com` | Somente leitura |
+| Perfil | Email | Senha | Estado inicial |
+|---|---|---|---|
+| Família | `familia.demo@cuidarmais.com` | `CuidarMais@2026` | Possui um assistido fictício |
+| Gestor | `gestor.demo@cuidarmais.com` | `CuidarMais@2026` | Possui uma casa fictícia |
+| Admin | `admin.demo@cuidarmais.com` | `CuidarMais@2026` | Somente leitura |
 
 A conta admin pública não pode gerar ou excluir convites. Códigos e emails de convites também são mascarados para evitar exposição de dados reais.
 
