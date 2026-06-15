@@ -28,19 +28,19 @@
 | Healthcheck | https://cuidarmais-backend-production.up.railway.app/health |
 | GraphQL | https://cuidarmais-backend-production.up.railway.app/graphql |
 
-### Credenciais de demonstração
+### Credenciais de teste público
 
 Use estas contas na [tela de login](https://cuidarmais.vercel.app/login):
 
 | Perfil | Email | Senha | Estado inicial |
 |---|---|---|---|
-| Família | `familia.demo@cuidarmais.com` | `CuidarMais@2026` | Possui um assistido fictício |
-| Gestor | `gestor.demo@cuidarmais.com` | `CuidarMais@2026` | Possui uma casa fictícia |
-| Admin | `admin.demo@cuidarmais.com` | `CuidarMais@2026` | Somente leitura |
+| Família | `ana.santos@cuidarmais.com` | `CuidarMais@2026` | Responsável por Maria José Santos |
+| Gestor | `roberto.almeida@cuidarmais.com` | `CuidarMais@2026` | Administra a Casa Esperança Campina Grande |
+| Admin | `admin@cuidarmais.com` | `CuidarMais@2026` | Somente leitura |
 
 A conta admin pública não pode gerar ou excluir convites. Códigos e emails de convites também são mascarados para evitar exposição de dados reais.
 
-> Essas credenciais são exclusivas do ambiente demonstrativo. Nunca reutilize essa senha em contas pessoais ou administrativas reais.
+> Essas credenciais são exclusivas do ambiente de teste público. Os dados são realistas para validação acadêmica, mas não devem representar pessoas privadas reais.
 
 ---
 
@@ -409,7 +409,7 @@ npm run frontend   # só o frontend
 npm run seed:demo
 ```
 
-O comando é idempotente: cria ou atualiza as três contas documentadas acima, além do assistido e da casa fictícia.
+O comando é idempotente: cria ou atualiza as três contas documentadas acima, além do assistido e da casa de apoio usados nos testes.
 
 ### Verificação antes do deploy
 
@@ -425,14 +425,21 @@ Esse comando valida a sintaxe do backend, executa o ESLint e gera o build de pro
 
 ### Railway
 
-Configure o diretório raiz do serviço como `backend` e cadastre:
+Opção recomendada: configure o diretório raiz do serviço como `backend`.
+Nesse caso, deixe o arquivo de configuração como `railway.json` dentro desse diretório, ou use a configuração padrão do Railway.
+
+Se o serviço estiver conectado pela raiz do repositório, o arquivo `railway.json` da raiz instala e inicia o backend automaticamente.
+
+Cadastre as variáveis:
 
 ```env
 NODE_ENV=production
 MONGO_URI=...
 JWT_SECRET=...
 JWT_EXPIRES_IN=90d
-FRONTEND_URL=https://cuidarmais.vercel.app
+FRONTEND_URL=https://cuidarmais.vercel.app,https://frontend-one-orcin-79.vercel.app
+# Opcional para previews adicionais da Vercel:
+# CORS_ALLOWED_PATTERNS=^https://frontend-[a-z0-9-]+\\.vercel\\.app$
 EMAIL_USER=...
 EMAIL_PASS=...
 EMAIL_FROM="CuidarMais <email-configurado@gmail.com>"
@@ -442,7 +449,7 @@ SMTP_SECURE=false
 SMTP_REJECT_UNAUTHORIZED=true
 ```
 
-O Railway executa `npm start` e verifica `/health`. Para recriar os dados demonstrativos, execute `npm run seed:demo` no serviço.
+O Railway executa `npm start` e verifica `/health`. Para recriar os dados de teste, execute `npm run seed:demo` no serviço.
 
 Em produção, os índices não são alterados automaticamente durante o boot. Depois de revisar possíveis dados legados duplicados, aplique os índices declarados pelos models com:
 

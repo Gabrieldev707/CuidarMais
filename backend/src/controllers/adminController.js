@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const nodemailer = require('nodemailer')
 const ConviteGestor = require('../models/ConviteGestor')
 const User = require('../models/User')
-const { DEMO_EMAILS } = require('../config/demo')
+const { READ_ONLY_ADMIN_EMAILS } = require('../config/demo')
 
 const normalizarEmail = (email) => email.trim().toLowerCase()
 const normalizarSenhaEmail = (senha) => senha.replace(/\s+/g, '')
@@ -197,7 +197,7 @@ exports.listarConvites = async(req, res) => {
 
         const adminDemo = await User.exists({
             _id: req.usuario.id,
-            email: DEMO_EMAILS.admin
+            email: { $in: READ_ONLY_ADMIN_EMAILS }
         })
 
         if (adminDemo) {

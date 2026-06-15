@@ -1,13 +1,13 @@
 const User = require('../models/User')
-const { DEMO_EMAILS } = require('../config/demo')
+const { READ_ONLY_ADMIN_EMAILS } = require('../config/demo')
 
 module.exports = async(req, res, next) => {
     try {
         const usuario = await User.findById(req.usuario.id).select('email')
 
-        if (usuario?.email === DEMO_EMAILS.admin) {
+        if (READ_ONLY_ADMIN_EMAILS.includes(usuario?.email)) {
             return res.status(403).json({
-                message: 'A conta admin de demonstracao possui acesso somente leitura'
+                message: 'A conta admin publica possui acesso somente leitura'
             })
         }
 

@@ -5,7 +5,8 @@ import { getApiError } from '../../services/errors'
 
 export default function DashboardAdmin() {
   const { usuario } = useAuth()
-  const adminDemo = usuario?.email?.toLowerCase() === 'admin.demo@cuidarmais.com'
+  const adminsSomenteLeitura = ['admin@cuidarmais.com', 'admin.demo@cuidarmais.com']
+  const adminDemo = adminsSomenteLeitura.includes(usuario?.email?.toLowerCase())
   const [aba, setAba] = useState('visao')
   const [convites, setConvites] = useState([])
   const [stats, setStats] = useState({ usuarios: 0, gestores: 0, casas: 0, visitas: 0 })
@@ -307,7 +308,7 @@ export default function DashboardAdmin() {
             marginBottom: '1.5rem',
             fontSize: '0.88rem'
           }}>
-            Conta de demonstracao: estatisticas e convites podem ser consultados, mas alteracoes estao bloqueadas.
+            Conta publica de teste: estatisticas e convites podem ser consultados, mas alteracoes estao bloqueadas.
           </div>
         )}
 

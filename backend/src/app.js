@@ -15,14 +15,34 @@ const assistidoRoutes = require('./routes/assistido.routes');
 const candidaturaRoutes = require('./routes/candidatura.routes');
 const adminRoutes = require('./routes/admin.routes');
 
+const ORIGENS_FRONTEND_PADRAO = [
+    'https://cuidarmais.vercel.app',
+    'https://frontend-one-orcin-79.vercel.app'
+];
+
 const criarCorsOptions = () => {
     const isProduction = process.env.NODE_ENV === 'production';
     const allowedOrigins = new Set(
-        (process.env.FRONTEND_URL || '')
-            .split(',')
+        [
+            ...ORIGENS_FRONTEND_PADRAO,
+            ...(process.env.FRONTEND_URL || '').split(',')
+        ]
             .map(origin => origin.trim().replace(/\/+$/, ''))
             .filter(Boolean)
     );
+
+    const allowedPatterns = (process.env.CORS_ALLOWED_PATTERNS || '')
+            .split(',')
+            .map(pattern => pattern.trim())
+            .filter(Boolean)
+            .flatMap(pattern => {
+                try {
+                    return [new RegExp(pattern)];
+                } catch {
+                    console.warn(`CORS_ALLOWED_PATTERNS ignorado por regex invalido: ${pattern}`);
+                    return [];
+                }
+            });
 
     if (!isProduction) {
         allowedOrigins.add('http://localhost:5173');
@@ -36,7 +56,10 @@ const criarCorsOptions = () => {
             if (!origin) return callback(null, true);
 
             const originNormalizada = origin.replace(/\/+$/, '');
-            if (allowedOrigins.has(originNormalizada)) {
+            if (
+                allowedOrigins.has(originNormalizada) ||
+                allowedPatterns.some(pattern => pattern.test(originNormalizada))
+            ) {
                 return callback(null, true);
             }
 

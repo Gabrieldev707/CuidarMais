@@ -29,39 +29,39 @@ const seed = async() => {
 
     const familia = await atualizarUsuario({
         email: DEMO_EMAILS.familia,
-        nome: 'Familia Demonstracao',
+        nome: 'Ana Paula Santos',
         role: 'familia',
-        telefone: '(83) 99999-1001'
+        telefone: '(83) 98842-3011'
     })
 
     const gestor = await atualizarUsuario({
         email: DEMO_EMAILS.gestor,
-        nome: 'Gestor Demonstracao',
+        nome: 'Roberto Almeida',
         role: 'gestor',
-        telefone: '(83) 99999-1002'
+        telefone: '(83) 98831-2044'
     })
 
     await atualizarUsuario({
         email: DEMO_EMAILS.admin,
-        nome: 'Administrador Demonstracao',
+        nome: 'Carla Menezes',
         role: 'admin',
-        telefone: '(83) 99999-1003'
+        telefone: '(83) 98875-1190'
     })
 
     await Assistido.findOneAndUpdate(
         { responsavelId: familia._id },
         {
-            nome: 'Assistido Demonstracao',
-            dataNascimento: new Date('1950-05-15'),
+            nome: 'Maria Jose Santos',
+            dataNascimento: new Date('1948-05-15'),
             perfil: 'idoso',
             responsavelId: familia._id,
             dependencia: 'parcial',
-            condicoes: ['hipertensao'],
-            observacoes: 'Perfil criado exclusivamente para demonstracao.',
+            condicoes: ['hipertensao', 'diabetes_tipo_2'],
+            observacoes: 'Necessita acompanhamento para medicacao diaria, afericao de pressao e apoio em deslocamentos.',
             contatoEmergencia: {
-                nome: 'Familia Demonstracao',
-                telefone: '(83) 99999-1001',
-                parentesco: 'Responsavel'
+                nome: 'Ana Paula Santos',
+                telefone: '(83) 98842-3011',
+                parentesco: 'Filha'
             },
             ativo: true
         },
@@ -71,33 +71,33 @@ const seed = async() => {
     await Casa.findOneAndUpdate(
         { gestorId: gestor._id },
         {
-            nome: 'Casa CuidarMais Demonstracao',
-            descricao: 'Casa ficticia usada para demonstrar o painel do gestor.',
+            nome: 'Casa Esperanca Campina Grande',
+            descricao: 'Casa de apoio para idosos com acompanhamento multiprofissional, alimentacao assistida e atividades de convivencia.',
             tipo: 'idosos',
             endereco: {
-                rua: 'Rua das Flores',
-                numero: '100',
+                rua: 'Avenida Floriano Peixoto',
+                numero: '1450',
                 bairro: 'Centro',
                 cidade: 'Campina Grande',
                 estado: 'PB',
-                cep: '58400-000',
+                cep: '58400-165',
                 coords: {
-                    lat: -7.23072,
-                    lng: -35.88167
+                    lat: -7.2219,
+                    lng: -35.8817
                 }
             },
-            capacidade: 20,
-            vagasDisponiveis: 5,
-            servicos: ['enfermagem', 'alimentacao', 'medicamentos'],
+            capacidade: 32,
+            vagasDisponiveis: 8,
+            servicos: ['enfermagem', 'alimentacao', 'medicamentos', 'fisioterapia', 'atividades_recreativas'],
             gestorId: gestor._id,
-            telefone: '(83) 99999-1002',
+            telefone: '(83) 98831-2044',
             email: DEMO_EMAILS.gestor,
             ativo: true
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
     )
 
-    console.log('Contas de demonstracao atualizadas com sucesso:')
+    console.log('Contas de teste atualizadas com sucesso:')
     console.log(`Familia: ${DEMO_EMAILS.familia}`)
     console.log(`Gestor: ${DEMO_EMAILS.gestor}`)
     console.log(`Admin: ${DEMO_EMAILS.admin} (somente leitura)`)
@@ -105,7 +105,7 @@ const seed = async() => {
 
 seed()
     .catch(error => {
-        console.error('Erro ao criar dados de demonstracao:', error.message)
+        console.error('Erro ao criar dados de teste:', error.message)
         process.exitCode = 1
     })
     .finally(async() => {
