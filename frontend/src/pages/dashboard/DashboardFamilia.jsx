@@ -1076,6 +1076,10 @@ export default function DashboardFamilia() {
         <ModalAgendamento
           casa={modalVisita}
           onFechar={() => setModalVisita(null)}
+          onAgendado={() => {
+            setAba('visitas')
+            carregarDados()
+          }}
         />
       )}
       {modalAvaliacao && (

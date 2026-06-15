@@ -9,7 +9,7 @@ const condicoesList = [
   'Depressão', 'Parkinson', 'AVC'
 ]
 
-export default function ModalAgendamento({ casa, onFechar }) {
+export default function ModalAgendamento({ casa, onFechar, onAgendado }) {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [etapa, setEtapa] = useState(1)
@@ -52,12 +52,13 @@ export default function ModalAgendamento({ casa, onFechar }) {
     setLoading(true)
     setErro('')
     try {
-      await api.post('/visitas', {
+      const { data } = await api.post('/visitas', {
         casaId: casa._id || casa.id,
         data: form.dataVisita,
         horario: form.horario,
         observacoes: `Idoso: ${form.nomeIdoso} | Nascimento: ${form.dataNascimento} | Dependência: ${form.dependencia} | Condições: ${form.condicoes.join(', ')} | Obs: ${form.observacoes}`
       })
+      Promise.resolve(onAgendado?.(data.visita)).catch(console.error)
       setSucesso(true)
     } catch (err) {
       setErro(err.response?.data?.message || 'Erro ao agendar visita')
