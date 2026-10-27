@@ -21,3 +21,6 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Pastas de ferramentas locais (IA/automação)
+.arcadia/
